@@ -146,6 +146,7 @@ public abstract class Game {
         int initW = heroImg != null ? heroImg.getWidth() : 50;
         int initH = heroImg != null ? heroImg.getHeight() : 50;
 
+        HeroAircraft.resetInstance();
         HeroAircraft.initHeroAircraft(
                 width / 2,
                 height - initH,

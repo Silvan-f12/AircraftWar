@@ -1,6 +1,7 @@
 package edu.hitsz;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -42,12 +43,15 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
 
     // 绘图用的 Paint (用于游戏结束界面)
     private final Paint endPaint;
-
+    // [新增] 标记是否正在显示 Game Over 定格画面（此时线程不应停止，而应持续重绘该画面）
+    private boolean isDisplayingGameOver = false;
     // 游戏结束回调接口
     private OnGameOverListener gameOverListener;
 
     // 标记游戏是否已结束（用于防止重复回调）
     private boolean isGameOver = false;
+
+    private Bitmap bgBitmap;
 
     /**
      * 游戏结束监听接口
@@ -142,7 +146,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void run() {
         Canvas canvas;
-        long frameTime = 16; // 60FPS = 1000ms / 60 ≈ 16.67ms
+        long frameTime = 16;
         long startTime;
         long sleepTime;
 
@@ -157,17 +161,32 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                     canvas.drawColor(Color.BLACK);
 
                     if (game != null) {
-                        // 更新游戏逻辑
-                        game.updateLogic();
-                        // 绘制游戏画面
-                        game.draw(canvas);
-
-                        // 检查游戏是否结束
-                        if (game.isGameOver() && !isGameOver) {
-                            isGameOver = true;
+                        // 【修改点】如果正在显示 Game Over 画面，则不再更新逻辑，只重绘结束界面
+                        if (isDisplayingGameOver) {
                             drawGameOver(canvas);
-                            if (gameOverListener != null) {
-                                gameOverListener.onGameOver(game.getScore());
+                        } else {
+                            // 正常游戏流程
+                            game.updateLogic();
+                            game.draw(canvas);
+
+                            // 检查游戏是否结束
+                            if (game.isGameOver() && !isDisplayingGameOver) {
+                                // 进入结束状态
+                                isDisplayingGameOver = true;
+
+                                // 绘制最后一帧结束画面
+                                drawGameOver(canvas);
+
+                                // 获取最终分数
+                                final int finalScore = game.getScore();
+
+                                // 将回调切换到主线程执行
+                                // 使用 View 的 post 方法，它会自动在 UI 线程运行
+                                MySurfaceView.this.post(() -> {
+                                    if (gameOverListener != null) {
+                                        gameOverListener.onGameOver(finalScore);
+                                    }
+                                });
                             }
                         }
                     }
@@ -178,7 +197,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                 }
             }
 
-            // 【关键】精确控制帧率
+            // 控制帧率
             sleepTime = frameTime - (System.currentTimeMillis() - startTime);
             if (sleepTime > 0) {
                 try {
@@ -191,25 +210,78 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     }
 
     /**
-     * 绘制游戏结束界面
+     * 绘制游戏结束界面 (模拟磨砂玻璃效果)
      */
     private void drawGameOver(Canvas canvas) {
-        // 半透明黑色背景
+        // --- 1. 绘制深色遮罩 (让背景游戏画面变暗，突出前景) ---
         Paint bgPaint = new Paint();
-        bgPaint.setColor(Color.argb(200, 0, 0, 0));
+        // 提高透明度到 230 (范围 0-255)，让背景更暗，更有聚焦感
+        bgPaint.setColor(Color.argb(20, 0, 0, 0));
         canvas.drawRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, bgPaint);
+
+        // --- 2. 配置“磨砂玻璃”卡片样式 ---
+        Paint glassPaint = new Paint(Paint.ANTI_ALIAS_FLAG); // 开启抗锯齿
+        // 颜色：半透明白色 (Alpha=60, 约 25% 不透明度)
+        // 这种半透明白色叠加在深色背景上，就是经典的磨砂玻璃效果
+        glassPaint.setColor(Color.argb(60, 255, 255, 255));
+        glassPaint.setStyle(Paint.Style.FILL);
+
+        // 定义卡片的大小和位置
+        float cardWidth = WINDOW_WIDTH * 0.8f; // 卡片宽度占屏幕 80%
+        float cardHeight = WINDOW_HEIGHT * 0.4f; // 卡片高度占屏幕 40%
+        float left = (WINDOW_WIDTH - cardWidth) / 2f;
+        float top = (WINDOW_HEIGHT - cardHeight) / 2f;
+        float right = left + cardWidth;
+        float bottom = top + cardHeight;
+        float radius = 40f; // 圆角半径
+
+        // 绘制圆角矩形 (这就是“玻璃”本体)
+        canvas.drawRoundRect(left, top, right, bottom, radius, radius, glassPaint);
+
+        // (可选) 给玻璃卡片加一个细微的白色边框，增加质感
+        Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        borderPaint.setColor(Color.argb(100, 255, 255, 255)); // 更淡的白边
+        borderPaint.setStyle(Paint.Style.STROKE);
+        borderPaint.setStrokeWidth(2f);
+        canvas.drawRoundRect(left, top, right, bottom, radius, radius, borderPaint);
+
+        // --- 3. 绘制文字 (现在文字是在“玻璃”上面) ---
 
         // 游戏结束文字
         endPaint.setTextSize(60);
+        endPaint.setTextAlign(Paint.Align.CENTER);
+        endPaint.setColor(Color.WHITE); // 确保文字是白色的，在玻璃上更清晰
+        // 可以加一点阴影，让文字更立体
+        endPaint.setShadowLayer(4f, 0f, 2f, Color.BLACK);
+
+        Paint.FontMetrics fm = endPaint.getFontMetrics();
+        float lineHeight = fm.bottom - fm.top;
+
+        // 计算文字在卡片内的垂直中心位置
+        // 卡片中心 Y = top + cardHeight / 2
+        float cardCenterY = top + cardHeight / 2f;
+
+        // 第一行 "GAME OVER" (稍微偏上一点)
         String text = "GAME OVER";
-        canvas.drawText(text, WINDOW_WIDTH / 2f, WINDOW_HEIGHT / 2f - 50, endPaint);
+        // 基线位置 = 卡片中心 - (文字总高度 / 2) + 一些微调
+        float textY = cardCenterY - (lineHeight / 2f) - 20f;
+        canvas.drawText(text, WINDOW_WIDTH / 2f, textY, endPaint);
 
         // 显示分数
         if (game != null) {
             endPaint.setTextSize(40);
+            // 重置阴影或调整阴影以适应小字
+            endPaint.setShadowLayer(2f, 0f, 1f, Color.BLACK);
+
             String scoreText = "Final Score: " + game.getScore();
-            canvas.drawText(scoreText, WINDOW_WIDTH / 2f, WINDOW_HEIGHT / 2f + 20, endPaint);
+            // 分数在标题下方
+            float scoreY = textY + lineHeight + 30f;
+            canvas.drawText(scoreText, WINDOW_WIDTH / 2f, scoreY, endPaint);
         }
+
+        // 恢复 Paint 设置 (防止影响下一帧的游戏绘制)
+        endPaint.clearShadowLayer();
+        endPaint.setColor(Color.BLACK); // 假设你默认文字是黑色，改回来
     }
 
     @Override
@@ -225,6 +297,15 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
             }
         }
         return true;
+    }
+
+    /**
+     * 重置游戏结束状态，准备开始新游戏
+     * 必须在启动新游戏逻辑前调用
+     */
+    public void resetGameOverState() {
+        isDisplayingGameOver = false;
+        isGameOver = false;
     }
 
     /**

@@ -1,5 +1,7 @@
 package edu.hitsz.aircraft;
 
+import android.util.Log;
+
 import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.shoot_strategy.ShootFanShaped;
 import edu.hitsz.shoot_strategy.ShootStraight;
@@ -112,5 +114,24 @@ public class HeroAircraft extends AbstractAircraft {
         }
         return instance;
     }
+    /**
+     * 关键方法：重置单例实例
+     * 在每局新游戏开始前必须调用此方法，强制销毁旧对象
+     */
+    public static void resetInstance() {
+        instance = null;
+        Log.d("HeroAircraft", "Singleton instance destroyed. Ready for new game.");
+    }
+    // [新增] 重置状态方法
+    public void reset(int x, int y, int speedX,int speedY,int hp) {
+        sin_locationX = x;
+        sin_locationY = y;
+        sin_speedX = speedX;
+        sin_speedY = speedY;
+        sin_hp = hp;
+
+        Log.d("HeroAircraft", "Hero reset to (" + x + ", " + y + ") with HP: " + hp);
+    }
+
 
 }

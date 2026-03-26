@@ -1,7 +1,10 @@
 package edu.hitsz.Game;
 
+import static android.graphics.BitmapFactory.decodeResource;
+
 import android.content.Context;
 
+import edu.hitsz.R;
 import edu.hitsz.ScoreRecord.ScoreRecords;
 import edu.hitsz.aircraft.AbstractEnemyAircraft;
 import edu.hitsz.application.ImageManager;
@@ -20,10 +23,12 @@ public class DifficultGame extends Game{
         //难度设置
         difficultyLevel = 3;
         this.context = context;
-
+        ENEMY_SPEED_X = 5;
+        ENEMY_SPEED_Y = 10;
         // 初始化分数记录
         try {
             scoreRecords = new ScoreRecords(context);
+            ImageManager.BACKGROUND_IMAGE = decodeResource(context.getResources(), R.drawable.bg5);
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize record DAO", e);
         }
@@ -96,5 +101,14 @@ public class DifficultGame extends Game{
     @Override
     public void setBossScoreTheshold() {
         this.bossScoreTheshold = 800;
+    }
+    public void insertScore(int score) {
+        if (scoreRecords != null) {
+            scoreRecords.addPlayerScoreRecordsScore("user0",score);
+        }
+    }
+
+    public ScoreRecords getScoreRecords() {
+        return scoreRecords;
     }
 }

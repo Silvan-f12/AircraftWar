@@ -1,7 +1,12 @@
 package edu.hitsz.Game;
 
+import static android.graphics.BitmapFactory.decodeResource;
+
 import android.content.Context;
 
+import androidx.core.widget.ImageViewCompat;
+
+import edu.hitsz.R;
 import edu.hitsz.ScoreRecord.ScoreRecords;
 import edu.hitsz.aircraft.AbstractEnemyAircraft;
 import edu.hitsz.application.ImageManager;
@@ -19,9 +24,12 @@ public class MediumGame extends Game{
         super(width, height);
         difficultyLevel = 2;
         this.context=context;
+        ENEMY_SPEED_X = 5;
+        ENEMY_SPEED_Y = 10;
         try {
             scoreRecords = new ScoreRecords(context);
             // 删除 ImageIO.read 相关代码，图片由 ImageManager.init(context) 统一加载
+            ImageManager.BACKGROUND_IMAGE = decodeResource(context.getResources(), R.drawable.bg3);
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize record DAO", e);
         }
@@ -89,6 +97,14 @@ public class MediumGame extends Game{
     public void setBossScoreTheshold() {
         this.bossScoreTheshold = 1000;
     }
+    public void insertScore(int score) {
+        if (scoreRecords != null) {
+            scoreRecords.addPlayerScoreRecordsScore("user0",score);
+        }
+    }
 
+    public ScoreRecords getScoreRecords() {
+        return scoreRecords;
+    }
 
 }

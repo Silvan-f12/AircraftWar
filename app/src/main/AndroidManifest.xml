@@ -9,16 +9,37 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsPictureInPicture="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.AircraftWar">
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".LeaderBoardActivity"
+            android:exported="false"
+            android:screenOrientation="fullSensor"
+            android:theme="@style/Theme.AircraftWar" />
+        <!-- 1. SelectActivity: 新的启动入口 (难度选择界面) -->
+        <activity
+            android:name=".SelectActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AircraftWar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity> <!-- 2. MainActivity: 游戏运行界面 (内部页面，不可直接启动) -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:resizeableActivity="true"
+            android:screenOrientation="portrait"
+            android:supportsPictureInPicture="true"
+            android:theme="@style/Theme.AircraftWar">
+
+            <!-- 注意：这里移除了 intent-filter，因为它不再是入口 -->
         </activity>
     </application>
 

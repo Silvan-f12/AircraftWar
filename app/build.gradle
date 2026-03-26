@@ -4,15 +4,11 @@ plugins {
 
 android {
     namespace 'edu.hitsz'
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk 36
 
     defaultConfig {
         applicationId "edu.hitsz"
-        minSdk 35
+        minSdk 34
         targetSdk 36
         versionCode 1
         versionName "1.0"
@@ -30,6 +26,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+    buildToolsVersion '36.0.0'
 }
 
 dependencies {

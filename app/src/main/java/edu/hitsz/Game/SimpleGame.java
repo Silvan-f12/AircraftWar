@@ -1,6 +1,7 @@
 package edu.hitsz.Game;
 
 import android.content.Context;
+import android.util.Log;
 
 import java.time.LocalDateTime;
 
@@ -27,8 +28,7 @@ public class SimpleGame extends Game {
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize record DAO", e);
         }
-
-
+        Log.d("SimpleGame", "Constructor called. Score initialized to: " + this.score);
     }
 
     @Override
@@ -70,8 +70,8 @@ public class SimpleGame extends Game {
 
     @Override
     public void setEliteEnemyProbability(int time) {
-        this.eliteEnemyProbability = 0.3;
-        this.eliteEnemyPlusProbability = 0.2;
+        this.eliteEnemyProbability = 0.1;
+        this.eliteEnemyPlusProbability = 0.05;
     }
 
     @Override
