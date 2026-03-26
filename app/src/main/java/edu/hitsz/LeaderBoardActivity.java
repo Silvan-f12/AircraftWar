@@ -8,6 +8,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 public class LeaderBoardActivity extends AppCompatActivity {
@@ -17,6 +20,7 @@ public class LeaderBoardActivity extends AppCompatActivity {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable navigationRunnable;
+    private OnBackInvokedCallback mBackCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,7 +30,7 @@ public class LeaderBoardActivity extends AppCompatActivity {
         bottomNavigation = findViewById(R.id.bottomNavigation);
         rbHome = findViewById(R.id.rbHome);
         rbLeaderboard = findViewById(R.id.rbLeaderboard);
-
+        enablePredictiveBackGesture();
         // 初始状态：确保选中排行榜
         rbLeaderboard.setChecked(true);
 
@@ -62,7 +66,7 @@ public class LeaderBoardActivity extends AppCompatActivity {
                     };
 
                     // 延迟执行，给用户一点视觉反馈
-                    handler.postDelayed(navigationRunnable, 250);
+                    handler.postDelayed(navigationRunnable, 200);
 
                 } else if (checkedId == R.id.rbLeaderboard) {
                     // 点击当前页，什么都不做
@@ -79,6 +83,34 @@ public class LeaderBoardActivity extends AppCompatActivity {
             handler.removeCallbacks(navigationRunnable);
         }
     }
+    /**
+     * 启用 官方标准可预测手势返回（Android 13+）
+     */
+    private void enablePredictiveBackGesture() {
+        // API 33+
+        OnBackInvokedDispatcher dispatcher = getOnBackInvokedDispatcher();
 
+        mBackCallback = () -> {
+            // 用户侧滑返回确认 → 关闭当前页面
+            finish();
+        };
+
+        // 注册回调
+        dispatcher.registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                mBackCallback
+        );
+    }
+
+    /**
+     * 页面销毁时 注销回调，防止内存泄漏
+     */
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mBackCallback != null) {
+            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(mBackCallback);
+        }
+    }
 
 }

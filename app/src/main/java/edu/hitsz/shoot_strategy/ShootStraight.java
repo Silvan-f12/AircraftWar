@@ -16,7 +16,7 @@ public class ShootStraight implements ShootStrategy {
         int x = locationX;
         int y = locationY + direction*2;
         int speedX1 = 0;
-        int speedY1 = speedY + direction*15;
+        int speedY1 = speedY + direction*10;
         BaseBullet bullet;
         //分情况讨论，敌机和英雄机
         for(int i=0; i<shootNum; i++){

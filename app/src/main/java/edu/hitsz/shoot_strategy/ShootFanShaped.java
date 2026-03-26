@@ -12,15 +12,15 @@ public class ShootFanShaped implements ShootStrategy{
         int x = locationX;
         int y = locationY + direction * 2;
         int speedX1 = 0;
-        int speedY1 = speedY + direction * 15;
+        int speedY1 = speedY + direction * 10;
         BaseBullet bullet;
         for (int i = 0; i < shootNum; i++) {
             // 子弹发射位置相对飞机位置向前偏移
             // 多个子弹横向分散
             if(direction > 0) {
-                bullet = new EnemyBullet(x + (i * 2 - shootNum + 1) * 10, y, speedX1 + 2*i - shootNum + 1, speedY1, power);
+                bullet = new EnemyBullet(x + (i * 2 - shootNum + 1) * 10, y, speedX1 + 4*i - shootNum + 1, speedY1, power);
             } else {
-                bullet = new HeroBullet(x + (i * 2 - shootNum + 1) * 10, y, speedX1 + 2*i - shootNum + 1, speedY1, power);
+                bullet = new HeroBullet(x + (i * 2 - shootNum + 1) * 10, y, speedX1 + 4*i - shootNum + 1, speedY1, power);
             }
             res.add(bullet);
         }

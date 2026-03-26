@@ -2,45 +2,54 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 网络状态权限 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- 音频控制权限：允许修改音量 (解决 AppOps 警告) -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- 唤醒锁权限：防止锁屏断音乐 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- 应用主体配置 -->
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsPictureInPicture="true"
         android:supportsRtl="true"
+        android:theme="@style/Theme.AircraftWar"
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="34">
+
+    <!-- 排行榜界面 -->
+    <activity
+        android:name=".LeaderBoardActivity"
+        android:exported="false"
+        android:theme="@style/Theme.AircraftWar" />
+
+    <!-- 1. SelectActivity: 启动入口 (难度选择界面) -->
+    <activity
+        android:name=".SelectActivity"
+        android:exported="true"
         android:theme="@style/Theme.AircraftWar">
-        <activity
-            android:name=".LeaderBoardActivity"
-            android:exported="false"
-            android:screenOrientation="fullSensor"
-            android:theme="@style/Theme.AircraftWar" />
-        <!-- 1. SelectActivity: 新的启动入口 (难度选择界面) -->
-        <activity
-            android:name=".SelectActivity"
-            android:exported="true"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.AircraftWar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+    </activity>
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity> <!-- 2. MainActivity: 游戏运行界面 (内部页面，不可直接启动) -->
-        <activity
-            android:name=".MainActivity"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:exported="false"
-            android:launchMode="singleTask"
-            android:resizeableActivity="true"
-            android:screenOrientation="portrait"
-            android:supportsPictureInPicture="true"
-            android:theme="@style/Theme.AircraftWar">
+    <!-- 2. MainActivity: 游戏运行界面 -->
+    <activity
+        android:name=".MainActivity"
+        android:exported="false"
+        android:launchMode="singleTask"
+        android:theme="@style/Theme.AircraftWar"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="true" />
 
-            <!-- 注意：这里移除了 intent-filter，因为它不再是入口 -->
-        </activity>
     </application>
-
 </manifest>

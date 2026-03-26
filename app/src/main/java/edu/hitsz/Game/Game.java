@@ -7,7 +7,9 @@ import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.graphics.RectF;
 
+import edu.hitsz.R;
 import edu.hitsz.aircraft.*;
+import edu.hitsz.application.AudioManager;
 import edu.hitsz.application.ImageManager;
 import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.basic.AbstractFlyingObject;
@@ -83,10 +85,10 @@ public abstract class Game {
     private int cycleTime = 0;
 
     /**
-     * 定义飞机的速度
+     * 定义敌机的速度
      */
-    protected int ENEMY_SPEED_X;
-    protected int ENEMY_SPEED_Y;
+    protected int ENEMY_SPEED_X = 5;
+    protected int ENEMY_SPEED_Y = 10;
 
     /**
      * 定义精英机和道具的产生频率
@@ -107,6 +109,8 @@ public abstract class Game {
     private double firePropProbability = 0.1;
     private double bombPropProbability = 0.5;
     private double firePlusPropProbability = 0.1;
+    // 记录距离上次敌机射击过去了多少毫秒
+    private double enemyShootTimer = 0;
 
     // 精英机最大水平速度
     protected int MAX_SPEED_X = 10;
@@ -173,8 +177,6 @@ public abstract class Game {
         scorePaint.setTypeface(Typeface.DEFAULT_BOLD);
         scorePaint.setAntiAlias(true);
 
-        // 【删除】Scheduled 线程池已移除，由 SurfaceView 渲染线程驱动
-
         // 初始化观察者
         mobEnemyObserver = new MobEnemyObserver();
         eliteEnemyObserver = new EliteEnemyObserver();
@@ -200,11 +202,13 @@ public abstract class Game {
         }
 
         // 【关键】使用固定时间增量 (16ms = 60FPS)
-        time += timeInterval;
+        time += (int) timeInterval;
         setCycleDuration(time);
         setEliteEnemyProbability(time);
         setEliteEnemyHp(time);
         setBossScoreTheshold();
+        //敌机子弹发射周期变化
+        double currentShootInterval = cycleDuration * setEnemyShootFreq(time);
 
         if (timeCountAndNewCycleJudge()) {
             setEnemyMaxNumber(time);
@@ -216,9 +220,20 @@ public abstract class Game {
 
             shootActionHero();
 
-            if (time % (cycleDuration * setEnemyShootFreq(time)) == 0) {
-                shootActionEnemy();
-            }
+//            if (time % (cycleDuration * setEnemyShootFreq(time)) == 0) {
+//                shootActionEnemy();
+//            }
+        }
+        // ================= 新增：独立的射击计时逻辑 =================
+        // 无论是否在生成周期内，每帧都更新射击计时器
+        enemyShootTimer += timeInterval; // 累加经过的时间 (40ms)
+
+        // 如果累积时间超过了当前需要的间隔
+        if (enemyShootTimer >= currentShootInterval) {
+            shootActionEnemy(); // 开火！
+
+            // 关键：减去消耗的间隔，保留剩余的时间（防止帧率波动导致漏射或多射）
+            enemyShootTimer -= currentShootInterval;
         }
 
         bulletsMoveAction();
@@ -307,6 +322,10 @@ public abstract class Game {
     private void shootActionHero() {
         if (!heroAircraft.notValid()) {
             heroBullets.addAll(heroAircraft.shoot());
+        }
+        //添加英雄机音效
+        if(time % (2*timeInterval)==0) {
+            AudioManager.getInstance().playSound("bullet");
         }
     }
 
@@ -452,6 +471,7 @@ public abstract class Game {
                 }
             }
             enemyAircraft.vanish();
+            AudioManager.getInstance().stopBgm();
         }
     }
 
@@ -483,12 +503,14 @@ public abstract class Game {
                     enemyAircraft.decreaseHp(bullet.getPower());
                     bullet.vanish();
                     EnemyCrashGetScoreAndProp(enemyAircraft);
+                    AudioManager.getInstance().playSound("bullet_hit");
                 }
                 // 英雄机与敌机相撞
                 if (enemyAircraft.crash(heroAircraft) || heroAircraft.crash(enemyAircraft)) {
                     enemyAircraft.decreaseHp(Integer.MAX_VALUE);
                     enemyAircraft.vanish();
                     heroAircraft.decreaseHp(Integer.MAX_VALUE);
+                    AudioManager.getInstance().playSound("game)over");
                 }
             }
         }
@@ -504,6 +526,7 @@ public abstract class Game {
             if (heroAircraft.crash(prop)) {
                 if (prop instanceof HpProp) {
                     heroAircraft.increaseHp(prop.propValid());
+                    AudioManager.getInstance().playSound("get_supply");
                     prop.vanish();
                 }
                 if (prop instanceof FireSupplyProp) {
@@ -515,6 +538,7 @@ public abstract class Game {
                     prop.vanish();
                 }
                 if (prop instanceof BombSupplyProp) {
+                    AudioManager.getInstance().playSound("bomb_explosion");
                     prop.addObserver(mobEnemyObserver);
                     prop.addObserver(eliteEnemyPlusObserver);
                     prop.addObserver(eliteEnemyObserver);

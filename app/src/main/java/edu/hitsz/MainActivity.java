@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Rational;
 import android.view.Gravity;
@@ -45,6 +46,11 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     private String currentLevel = "简单模式";
     private boolean isGameStarted = false;
     private boolean isGamePaused = false;
+    //音乐是否播放
+    private boolean isAudioEnabled = false;
+    //音量控制
+    private float audioBgmVolume = 0.5f;
+    private float audioSfxVolume = 0.5f;
 
     // --- 双击退出核心变量 ---
     private boolean isExitRequested = false;
@@ -54,14 +60,14 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         Log.d("MainActivity", "Exit flag reset (timeout).");
     };
     private static final long EXIT_TIME_DELAY = 2000;
-
+    AudioManager audioManager = AudioManager.getInstance();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // 图片管理器
         ImageManager.init(this);
         // 音频管理器
-        AudioManager audioManager = AudioManager.getInstance();
+
         audioManager.init(this);
         // 预加载音效 (定义好映射关系)
         Map<String, Integer> sounds = new HashMap<>();
@@ -74,13 +80,31 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         //游戏
         gameContainer = new FrameLayout(this);
         setContentView(gameContainer);
+        // 获取启动参数
+        // 获取启动参数
+        if (getIntent() != null) {
+            if (getIntent().hasExtra("DIFFICULTY")) {
+                currentLevel = getIntent().getStringExtra("DIFFICULTY");
+            }
 
-        // 获取启动时传递的难度
-        if (getIntent() != null && getIntent().hasExtra("DIFFICULTY")) {
-            currentLevel = getIntent().getStringExtra("DIFFICULTY");
-        } else {
-            currentLevel = "简单模式";
+            // --- 接收音频设置 (关键修改) ---
+            if (getIntent().hasExtra("AUDIO_ENABLED")) {
+                isAudioEnabled = getIntent().getBooleanExtra("AUDIO_ENABLED", true);
+            }
+            if (getIntent().hasExtra("BGM_VOLUME")) {
+                audioBgmVolume = getIntent().getFloatExtra("BGM_VOLUME", 0.5f);
+            }
+            if (getIntent().hasExtra("SFX_VOLUME")) {
+                audioSfxVolume = getIntent().getFloatExtra("SFX_VOLUME",0.5f);
+            }
+
+            Log.d("MainActivity", "Audio Settings -> Enabled: " + isAudioEnabled + ", BgmVolume: " + audioBgmVolume+", SfxVolume: "+audioSfxVolume);
         }
+        audioManager.setAudioEnabled(isAudioEnabled);
+        // 应用全局音量到 AudioManager
+        audioManager.setBgmVolume(audioBgmVolume);
+        audioManager.setSoundVolume(audioSfxVolume);
+
 
         // 初始化游戏
         startGame(currentLevel);
@@ -112,6 +136,7 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
             game = null;
         }
 
+        audioManager.playBgm(R.raw.bgm);
         switch(level) {
             case "简单模式": game = new SimpleGame(this, width, height); break;
             case "中等模式": game = new MediumGame(this, width, height); break;
@@ -172,6 +197,9 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         restartBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (isAudioEnabled) {
+                    audioManager.playBgm(R.raw.bgm);
+                }
                 startGame(currentLevel);
             }
         });
@@ -222,6 +250,7 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
             gameSurfaceView = null;
         }
         isGameStarted = false;
+        audioManager.stopBgm(); // 跳转前停止音乐
 
         Intent intent = new Intent(MainActivity.this, SelectActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -273,7 +302,7 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     @Override
     public void onUserLeaveHint() {
         super.onUserLeaveHint();
-        if (isGameStarted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (isGameStarted) {
             Log.d("PiP", "Entering Picture-in-Picture mode...");
             Rational aspectRatio = new Rational(9, 16);
             PictureInPictureParams params = new PictureInPictureParams.Builder()
@@ -318,6 +347,7 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
             gameSurfaceView.pauseGame();
             isGamePaused = true;
         }
+        audioManager.pauseBgm();
     }
 
     @Override
@@ -327,6 +357,7 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
             gameSurfaceView.resumeGame();
             isGamePaused = false;
         }
+        audioManager.resumeBgm();
     }
 
     @Override
