@@ -12,6 +12,7 @@ import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.os.BuildCompat;
 
 public class LeaderBoardActivity extends AppCompatActivity {
 
@@ -59,8 +60,8 @@ public class LeaderBoardActivity extends AppCompatActivity {
 //                            );
 //                        } else {
 //                            overridePendingTransition(
-//                                    R.anim.slide_in_right,              // ✅ 修改
-//                                    R.anim.slide_out_left               // ✅ 修改
+//                                    R.anim.slide_in_right,
+//                                    R.anim.slide_out_left
 //                            );
 //                        }
                     };
@@ -87,19 +88,20 @@ public class LeaderBoardActivity extends AppCompatActivity {
      * 启用 官方标准可预测手势返回（Android 13+）
      */
     private void enablePredictiveBackGesture() {
-        // API 33+
-        OnBackInvokedDispatcher dispatcher = getOnBackInvokedDispatcher();
+        // 2. 使用安全的 BuildCompat 检查
+        if (BuildCompat.isAtLeastT()) {
+            // 3. 使用 Lambda 简化实现（这才是现代写法！）
+            mBackCallback = () -> {
+                // 逻辑：关闭页面
+                finish();
+            };
 
-        mBackCallback = () -> {
-            // 用户侧滑返回确认 → 关闭当前页面
-            finish();
-        };
-
-        // 注册回调
-        dispatcher.registerOnBackInvokedCallback(
-                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-                mBackCallback
-        );
+            // 4. 注册
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                    mBackCallback
+            );
+        }
     }
 
     /**

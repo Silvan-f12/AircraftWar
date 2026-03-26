@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.os.BuildCompat;
 
 import android.window.BackEvent;
 import android.window.OnBackAnimationCallback;
@@ -295,19 +296,20 @@ public class SelectActivity extends AppCompatActivity {
     }
 
     private void enablePredictiveBackGesture() {
-        // API 33+
-        OnBackInvokedDispatcher dispatcher = getOnBackInvokedDispatcher();
+        // 2. 使用安全的 BuildCompat 检查
+        if (BuildCompat.isAtLeastT()) {
+            // 3. 使用 Lambda 简化实现（这才是现代写法！）
+            mBackCallback = () -> {
+                // 逻辑：关闭页面
+                finish();
+            };
 
-        mBackCallback = () -> {
-            // 用户侧滑返回确认 → 关闭当前页面
-            finish();
-        };
-
-        // 注册回调
-        dispatcher.registerOnBackInvokedCallback(
-                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-                mBackCallback
-        );
+            // 4. 注册
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                    mBackCallback
+            );
+        }
     }
 
     @Override
