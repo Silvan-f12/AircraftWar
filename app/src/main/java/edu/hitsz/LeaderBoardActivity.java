@@ -21,7 +21,7 @@ public class LeaderBoardActivity extends AppCompatActivity {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable navigationRunnable;
-    private OnBackInvokedCallback mBackCallback;
+    //private OnBackInvokedCallback mBackCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,7 +31,7 @@ public class LeaderBoardActivity extends AppCompatActivity {
         bottomNavigation = findViewById(R.id.bottomNavigation);
         rbHome = findViewById(R.id.rbHome);
         rbLeaderboard = findViewById(R.id.rbLeaderboard);
-        enablePredictiveBackGesture();
+
         // 初始状态：确保选中排行榜
         rbLeaderboard.setChecked(true);
 
@@ -84,35 +84,8 @@ public class LeaderBoardActivity extends AppCompatActivity {
             handler.removeCallbacks(navigationRunnable);
         }
     }
-    /**
-     * 启用 官方标准可预测手势返回（Android 13+）
-     */
-    private void enablePredictiveBackGesture() {
-        // 2. 使用安全的 BuildCompat 检查
-        if (BuildCompat.isAtLeastT()) {
-            // 3. 使用 Lambda 简化实现（这才是现代写法！）
-            mBackCallback = () -> {
-                // 逻辑：关闭页面
-                finish();
-            };
 
-            // 4. 注册
-            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
-                    OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-                    mBackCallback
-            );
-        }
-    }
 
-    /**
-     * 页面销毁时 注销回调，防止内存泄漏
-     */
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mBackCallback != null) {
-            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(mBackCallback);
-        }
-    }
+
 
 }

@@ -52,7 +52,7 @@ public class SelectActivity extends AppCompatActivity {
     private final String[] difficultyLevels = {"简单模式", "中等模式", "困难模式"};
     private final int[] levelColors = {0xFF4CAF50, 0xFFFF9800, 0xFFF44336};
 
-    private OnBackInvokedCallback mBackCallback;
+    //private OnBackInvokedCallback mBackCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +64,7 @@ public class SelectActivity extends AppCompatActivity {
         initBottomNavigationBar();
 
         isInitialized = true;
-        enablePredictiveBackGesture();
+        //enablePredictiveBackGesture();
     }
 
     @Override
@@ -295,28 +295,5 @@ public class SelectActivity extends AppCompatActivity {
         btn.setOnClickListener(listener);
     }
 
-    private void enablePredictiveBackGesture() {
-        // 2. 使用安全的 BuildCompat 检查
-        if (BuildCompat.isAtLeastT()) {
-            // 3. 使用 Lambda 简化实现（这才是现代写法！）
-            mBackCallback = () -> {
-                // 逻辑：关闭页面
-                finish();
-            };
 
-            // 4. 注册
-            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
-                    OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-                    mBackCallback
-            );
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mBackCallback != null) {
-            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(mBackCallback);
-        }
-    }
 }
