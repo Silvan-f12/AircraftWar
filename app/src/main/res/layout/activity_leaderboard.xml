@@ -2,98 +2,111 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:background="#F5F5F5">
 
     <!-- 1. 顶部占位符 (专门用来避开状态栏) -->
-    <!-- 高度设为 60dp，确保内容不会被状态栏遮挡 -->
     <View
         android:layout_width="match_parent"
         android:layout_height="60dp" />
 
     <!-- 2. 难度切换按钮 (放在顶部) -->
-    <RadioGroup
+    <!-- 核心修改点：添加 android:gravity="center" -->
+    <com.google.android.material.chip.ChipGroup
         android:id="@+id/rgDifficultySwitch"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="10dp"
-        android:background="#FFFFFF"
-        android:elevation="2dp">
+        android:padding="8dp"
+        android:elevation="2dp"
+        android:layout_gravity="center"
+        app:singleSelection="true"
+        app:selectionRequired="true"
+        app:checkedChip="@id/rbSimple"
+        app:chipSpacingHorizontal="12dp">
 
-        <RadioButton
+        <!-- 下面的 Chip 代码保持不变 -->
+        <com.google.android.material.chip.Chip
             android:id="@+id/rbSimple"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="简单模式"
-            android:checked="true"
-            android:padding="10dp"/>
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="10dp"
+            android:textSize="14sp" />
 
-        <RadioButton
+        <com.google.android.material.chip.Chip
             android:id="@+id/rbMedium"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="中等模式"
-            android:padding="10dp"/>
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="10dp"
+            android:textSize="14sp" />
 
-        <RadioButton
+        <com.google.android.material.chip.Chip
             android:id="@+id/rbDifficult"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="困难模式"
-            android:padding="10dp"/>
-    </RadioGroup>
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="10dp"
+            android:textSize="14sp" />
 
-    <!-- 3. 排行榜内容区域 (核心修改：加 ScrollView) -->
-    <!-- 权重为 1，占据剩余所有空间，并且可以滚动 -->
+    </com.google.android.material.chip.ChipGroup>
+
+    <!-- 3. 排行榜内容区域 -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvRankingList"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:padding="10dp"
-        android:clipToPadding="false"/>
-    <!-- 清空按钮 -->
+    android:id="@+id/rvRankingList"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:padding="10dp"
+    android:clipToPadding="false"/>
+
+        <!-- 清空按钮 -->
     <Button
-        android:id="@+id/btnReset"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:text="清空排行榜"
-        android:backgroundTint="#DC3545" />
+    android:id="@+id/btnReset"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    android:text="清空排行榜"
+    android:backgroundTint="#DC3545" />
 
-    <!-- 4. 底部导航栏 (固定在底部) -->
+        <!-- 4. 底部导航栏 (固定在底部) -->
     <RadioGroup
-        android:id="@+id/bottomNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:orientation="horizontal"
-        android:background="#FFFFFF"
-        android:elevation="4dp">
+    android:id="@+id/bottomNavigation"
+    android:layout_width="match_parent"
+    android:layout_height="60dp"
+    android:orientation="horizontal"
+    android:background="#FFFFFF"
+    android:elevation="4dp">
 
-        <RadioButton
-            android:id="@+id/rbHome"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:button="@null"
-            android:gravity="center"
-            android:text="首页"
-            android:textColor="#666666"
-            android:textSize="16sp" />
+    <RadioButton
+        android:id="@+id/rbHome"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:button="@null"
+        android:gravity="center"
+        android:text="首页"
+        android:textColor="#666666"
+        android:textSize="16sp" />
 
-        <RadioButton
-            android:id="@+id/rbLeaderboard"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:button="@null"
-            android:gravity="center"
-            android:text="排行榜"
-            android:checked="true"
-            android:textColor="#333333"
-            android:textSize="16sp" />
+    <RadioButton
+        android:id="@+id/rbLeaderboard"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:button="@null"
+        android:gravity="center"
+        android:text="排行榜"
+        android:checked="true"
+        android:textColor="#333333"
+        android:textSize="16sp" />
     </RadioGroup>
 
 </LinearLayout>

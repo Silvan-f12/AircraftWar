@@ -27,6 +27,8 @@ import androidx.appcompat.view.ActionMode; // 引入 ActionMode
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.chip.ChipGroup;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +38,8 @@ import edu.hitsz.ScoreRecord.ScoreRecords;
 
 public class LeaderBoardActivity extends AppCompatActivity {
 
-    private RadioGroup bottomNavigation, rgDifficultySwitch;
+    private RadioGroup bottomNavigation;
+    private ChipGroup rgDifficultySwitch; // 这个改成 ChipGroup
     private RecyclerView rvRankingList;
 
     // 当前活动的 ActionMode (用于多选删除)
@@ -58,7 +61,10 @@ public class LeaderBoardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_leaderboard);
 
         rvRankingList = findViewById(R.id.rvRankingList);
-        rgDifficultySwitch = findViewById(R.id.rgDifficultySwitch);
+        // 1. 确保文件顶部有这行 import (如果没有，打出来让AS自动导)
+
+        // 2.模式切换
+        rgDifficultySwitch = findViewById(R.id.rgDifficultySwitch); // 现在 ChipGroup 可以正确接收 ChipGroup 了
         bottomNavigation = findViewById(R.id.bottomNavigation);
         //添加一键清空
         Button btnReset = findViewById(R.id.btnReset); // 推荐：在 XML 中定义
@@ -76,7 +82,7 @@ public class LeaderBoardActivity extends AppCompatActivity {
                         .setMessage("确定要清空当前难度的所有记录吗？此操作不可恢复！")
                         .setPositiveButton("清空", (dialog, which) -> {
                             // 获取当前选中的难度
-                            int selectedId = rgDifficultySwitch.getCheckedRadioButtonId();
+                            int selectedId = rgDifficultySwitch.getCheckedChipId();
                             String currentTag = difficultyTagMap.get(selectedId);
                             if (currentTag == null) currentTag = "simple";
 
@@ -120,7 +126,7 @@ public class LeaderBoardActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // 获取当前选中的难度
-        int selectedId = rgDifficultySwitch.getCheckedRadioButtonId();
+        int selectedId = rgDifficultySwitch.getCheckedChipId();
         String currentTag = difficultyTagMap.get(selectedId);
         if (currentTag == null) {
             currentTag = "simple"; // 默认值兜底
