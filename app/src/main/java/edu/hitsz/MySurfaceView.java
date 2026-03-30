@@ -1,13 +1,17 @@
 package edu.hitsz;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import androidx.annotation.NonNull;
 
 import edu.hitsz.Game.Game;
 
@@ -19,6 +23,7 @@ import edu.hitsz.Game.Game;
  */
 public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback, Runnable {
 
+    private static final String TAG = "MySurfaceView"; // 1. 定义一个统一的标签
     /**
      * 窗口宽度
      */
@@ -94,7 +99,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     }
 
     @Override
-    public void surfaceCreated(SurfaceHolder holder) {
+    public void surfaceCreated(@NonNull SurfaceHolder holder) {
         // 获取屏幕尺寸
         WINDOW_WIDTH = getWidth();
         WINDOW_HEIGHT = getHeight();
@@ -104,13 +109,13 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
         WINDOW_WIDTH = width;
         WINDOW_HEIGHT = height;
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
+    public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
         // 停止渲染线程
         stopGameLoop();
     }
@@ -132,27 +137,36 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
      * 停止游戏循环
      */
     private void stopGameLoop() {
-        isRunning = false;
+        isRunning = false; // 1. 先发信号，告诉循环我要停止了
+
+        // 2. 尝试中断线程，让它从 sleep 状态中立即醒来
+        if (renderThread != null && renderThread.isAlive()) {
+            renderThread.interrupt();
+        }
+
+        // 3. 等待线程结束，但不要等太久，防止卡死
         if (renderThread != null) {
             try {
-                renderThread.join(500);  // 最多等待500ms
+                renderThread.join(100); // 最多等 100ms
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Log.d(TAG, "停止线程时被中断");
+            } finally {
+                renderThread = null;
             }
-            renderThread = null;
         }
     }
 
     @Override
     public void run() {
-        Canvas canvas;
+        // 移动 sleepTime 的声明到循环内部
         long frameTime = 16;
         long startTime;
         long sleepTime;
 
+        // 只有 isRunning 为 true 时才循环
         while (isRunning) {
             startTime = System.currentTimeMillis();
-            canvas = null;
+            Canvas canvas = null;
 
             try {
                 canvas = holder.lockCanvas();
@@ -161,7 +175,6 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                     canvas.drawColor(Color.BLACK);
 
                     if (game != null) {
-                        // 【修改点】如果正在显示 Game Over 画面，则不再更新逻辑，只重绘结束界面
                         if (isDisplayingGameOver) {
                             drawGameOver(canvas);
                         } else {
@@ -171,42 +184,54 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
 
                             // 检查游戏是否结束
                             if (game.isGameOver() && !isDisplayingGameOver) {
-                                // 进入结束状态
                                 isDisplayingGameOver = true;
-
-                                // 绘制最后一帧结束画面
-                                drawGameOver(canvas);
 
                                 // 获取最终分数
                                 final int finalScore = game.getScore();
 
-                                // 将回调切换到主线程执行
-                                // 使用 View 的 post 方法，它会自动在 UI 线程运行
+                                // 回调给主线程
                                 MySurfaceView.this.post(() -> {
                                     if (gameOverListener != null) {
                                         gameOverListener.onGameOver(finalScore);
                                     }
+                                    // 关键：不要在这里调用 stopGameLoop()！
+                                    // 让主线程去调用 stopGameLoop()，这里只负责退出循环
                                 });
+
+                                // 直接跳出循环，防止继续绘制
+                                break;
                             }
                         }
                     }
                 }
+            } catch (Exception e) {
+                // 捕获所有异常，防止线程意外崩溃
+                Log.e(TAG, "渲染线程异常: " + e.getMessage());
+                break;
             } finally {
                 if (canvas != null) {
-                    holder.unlockCanvasAndPost(canvas);
+                    try {
+                        holder.unlockCanvasAndPost(canvas);
+                    } catch (Exception e) {
+                        // 忽略释放时的异常
+                    }
                 }
             }
 
-            // 控制帧率
+            // 控制帧率（关键：加了 try-catch 并且移除了外部的 sleepTime 计算）
             sleepTime = frameTime - (System.currentTimeMillis() - startTime);
             if (sleepTime > 0) {
                 try {
                     Thread.sleep(sleepTime);
                 } catch (InterruptedException e) {
+                    // 一旦被中断，立即退出
+                    break;
+                } catch (Exception e) {
                     break;
                 }
             }
         }
+        // 循环结束，线程自然死亡
     }
 
     /**
@@ -284,6 +309,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         endPaint.setColor(Color.BLACK); // 假设你默认文字是黑色，改回来
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (game != null && !game.isGameOver()) {

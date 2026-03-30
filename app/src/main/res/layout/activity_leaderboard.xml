@@ -3,42 +3,74 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#FFFFFF">
+    android:background="#F5F5F5">
 
-    <!-- 中间内容区域：排行榜标题 -->
-    <LinearLayout
+    <!-- 1. 顶部占位符 (专门用来避开状态栏) -->
+    <!-- 高度设为 60dp，确保内容不会被状态栏遮挡 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="60dp" />
+
+    <!-- 2. 难度切换按钮 (放在顶部) -->
+    <RadioGroup
+        android:id="@+id/rgDifficultySwitch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="10dp"
+        android:background="#FFFFFF"
+        android:elevation="2dp">
+
+        <RadioButton
+            android:id="@+id/rbSimple"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="简单模式"
+            android:checked="true"
+            android:padding="10dp"/>
+
+        <RadioButton
+            android:id="@+id/rbMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="中等模式"
+            android:padding="10dp"/>
+
+        <RadioButton
+            android:id="@+id/rbDifficult"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="困难模式"
+            android:padding="10dp"/>
+    </RadioGroup>
+
+    <!-- 3. 排行榜内容区域 (核心修改：加 ScrollView) -->
+    <!-- 权重为 1，占据剩余所有空间，并且可以滚动 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvRankingList"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center">
+        android:padding="10dp"
+        android:clipToPadding="false"/>
+    <!-- 清空按钮 -->
+    <Button
+        android:id="@+id/btnReset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="清空排行榜"
+        android:backgroundTint="#DC3545" />
 
-        <TextView
-            android:id="@+id/tvLeaderboardTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="排行榜"
-            android:textSize="32sp"
-            android:textColor="#333333"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="(功能开发中...)"
-            android:textSize="16sp"
-            android:textColor="#999999"
-            android:layout_marginTop="10dp"/>
-    </LinearLayout>
-
-    <!-- 在 activity_leaderboard.xml 中的 RadioGroup 部分 -->
+    <!-- 4. 底部导航栏 (固定在底部) -->
     <RadioGroup
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:orientation="horizontal"
-        android:background="#F5F5F5"
-        android:paddingVertical="4dp">
+        android:background="#FFFFFF"
+        android:elevation="4dp">
 
         <RadioButton
             android:id="@+id/rbHome"
@@ -46,12 +78,10 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:button="@null"
-            android:gravity="center_horizontal"
+            android:gravity="center"
             android:text="首页"
             android:textColor="#666666"
-            android:textSize="16sp"
-            android:paddingTop="8dp"
-            android:paddingBottom="4dp"/>
+            android:textSize="16sp" />
 
         <RadioButton
             android:id="@+id/rbLeaderboard"
@@ -59,14 +89,11 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:button="@null"
-            android:gravity="center_horizontal"
+            android:gravity="center"
             android:text="排行榜"
-            android:textColor="#333333"
-            android:textSize="16sp"
-            android:textStyle="bold"
             android:checked="true"
-            android:paddingTop="8dp"
-            android:paddingBottom="4dp"/>
+            android:textColor="#333333"
+            android:textSize="16sp" />
     </RadioGroup>
 
 </LinearLayout>

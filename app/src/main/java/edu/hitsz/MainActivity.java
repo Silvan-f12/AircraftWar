@@ -25,6 +25,7 @@ import androidx.activity.OnBackPressedCallback;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import edu.hitsz.Game.DifficultGame;
 import edu.hitsz.Game.Game;
@@ -42,7 +43,8 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     private MySurfaceView gameSurfaceView;
     private FrameLayout gameContainer;
     private Game game;
-
+    //用户名
+    private String userName;
     private String currentLevel = "简单模式";
     private boolean isGameStarted = false;
     private boolean isGamePaused = false;
@@ -80,25 +82,28 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         //游戏
         gameContainer = new FrameLayout(this);
         setContentView(gameContainer);
-        // 获取启动参数
-        // 获取启动参数
-        if (getIntent() != null) {
-            if (getIntent().hasExtra("DIFFICULTY")) {
-                currentLevel = getIntent().getStringExtra("DIFFICULTY");
+        Intent intent = getIntent(); // 先获取
+        if (intent != null) { // 先判断 Intent 是否为空
+            // 难度设置
+            if (intent.hasExtra("DIFFICULTY")) {
+                currentLevel = intent.getStringExtra("DIFFICULTY"); // 提供默认值
+            } else {
+                currentLevel = "简单模式"; // 强制默认
             }
 
-            // --- 接收音频设置 (关键修改) ---
-            if (getIntent().hasExtra("AUDIO_ENABLED")) {
-                isAudioEnabled = getIntent().getBooleanExtra("AUDIO_ENABLED", true);
-            }
-            if (getIntent().hasExtra("BGM_VOLUME")) {
-                audioBgmVolume = getIntent().getFloatExtra("BGM_VOLUME", 0.5f);
-            }
-            if (getIntent().hasExtra("SFX_VOLUME")) {
-                audioSfxVolume = getIntent().getFloatExtra("SFX_VOLUME",0.5f);
-            }
-
-            Log.d("MainActivity", "Audio Settings -> Enabled: " + isAudioEnabled + ", BgmVolume: " + audioBgmVolume+", SfxVolume: "+audioSfxVolume);
+            // 音频设置 (关键：这里如果没传值，必须给默认值，否则 getBooleanExtra 可能报错)
+            isAudioEnabled = intent.getBooleanExtra("AUDIO_ENABLED", true); // 第二个参数是默认值
+            audioBgmVolume = intent.getFloatExtra("BGM_VOLUME", 0.5f);
+            audioSfxVolume = intent.getFloatExtra("SFX_VOLUME", 0.5f);
+            userName = intent.getStringExtra("USERNAME"); // 假设你修改了方法签名或做了判空
+        } else {
+            // 如果 Intent 为空，全部使用默认值
+            currentLevel = "简单模式";
+            isAudioEnabled = true;
+            audioBgmVolume = 0.5f;
+            audioSfxVolume = 0.5f;
+            userName = "游客";
+            Log.e("MainActivity", "Intent is null! Using default settings.");
         }
         audioManager.setAudioEnabled(isAudioEnabled);
         // 应用全局音量到 AudioManager
@@ -113,9 +118,6 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         setupOnBackPressedCallback();
     }
 
-    /**
-     * 启动或重置游戏
-     */
     private void startGame(String level) {
         Log.d("MainActivity", "Starting game: " + level);
         gameContainer.removeAllViews();
@@ -137,11 +139,31 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         }
 
         audioManager.playBgm(R.raw.bgm);
-        switch(level) {
-            case "简单模式": game = new SimpleGame(this, width, height); break;
-            case "中等模式": game = new MediumGame(this, width, height); break;
-            case "困难模式": game = new DifficultGame(this, width, height); break;
-            default: game = new SimpleGame(this, width, height); break;
+
+
+        // 确保 userName 不为空
+        String finalUserName = userName;
+        if (finalUserName == null || finalUserName.trim().isEmpty()) {
+            finalUserName = "游客" + new Random().nextInt(100);
+        }
+        //
+
+        // 1. 定义要传给 Game 类的难度 Tag (统一使用英文)
+        String difficultyTag;
+
+        // 2. 根据传入的 level 判断
+        if ("简单模式".equals(level)) {
+            difficultyTag = "simple";
+            game = new SimpleGame(this, width, height, finalUserName, difficultyTag);
+        } else if ("中等模式".equals(level)) {
+            difficultyTag = "medium";
+            game = new MediumGame(this, width, height, finalUserName, difficultyTag);
+        } else if ("困难模式".equals(level)) {
+            difficultyTag = "difficult";
+            game = new DifficultGame(this, width, height, finalUserName, difficultyTag);
+        } else {
+            difficultyTag = "simple"; // 默认
+            game = new SimpleGame(this, width, height, finalUserName, difficultyTag);
         }
 
         if (gameSurfaceView != null) {
@@ -156,86 +178,25 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     @Override
     public void onGameOver(int score) {
         Log.d("Game", "Game Over! Score: " + score);
-        if (game != null && game.getScoreRecords() != null) {
-            game.insertScore(score);
+        if (game != null) {
+            game.insertScore();
         }
-
         isGameStarted = false;
         isGamePaused = true;
 
-        // 显示游戏结束选项按钮
-        showGameOverOptions();
+        // 2. 使用 Handler 延迟一点或者直接跳转
+        // 如果需要立即跳转，不需要 Handler；如果想等动画结束，可以加个延迟
+        new Handler(Looper.getMainLooper()).post(() -> {
+            Intent intent = new Intent(MainActivity.this, GameOverActivity.class);
+            intent.putExtra("FINAL_SCORE", score);
+            intent.putExtra("GAME_LEVEL", currentLevel); // 顺手把难度也传过去，方便显示
+            intent.putExtra("USERNAME", userName);
+            startActivity(intent);
+            // 注意：这里不 finish()，因为返回键应该回到 MainActivity 的 onPause 状态
+        });
     }
 
-    /**
-     * 显示游戏结束时的按钮 (再来一局 / 返回菜单)
-     */
-    private void showGameOverOptions() {
-        // 1. 清理旧按钮
-        for (int i = 0; i < gameContainer.getChildCount(); i++) {
-            View child = gameContainer.getChildAt(i);
-            if (child instanceof Button || child instanceof LinearLayout) {
-                gameContainer.removeView(child);
-                i--;
-            }
-        }
 
-        // 2. 创建水平布局
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.HORIZONTAL);
-        layout.setGravity(Gravity.CENTER);
-        layout.setPadding(40, 40, 40, 40);
-
-        // --- 按钮 A: 再来一局 ---
-        Button restartBtn = new Button(this);
-        restartBtn.setText("再来一局");
-        restartBtn.setTextSize(20);
-        restartBtn.setTextColor(0xFF333333);
-        restartBtn.setPadding(40, 30, 40, 30);
-        restartBtn.setBackground(createRoundRectDrawable(0xFF4CAF50));
-
-        restartBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isAudioEnabled) {
-                    audioManager.playBgm(R.raw.bgm);
-                }
-                startGame(currentLevel);
-            }
-        });
-
-        // --- 按钮 B: 返回菜单 ---
-        Button menuBtn = new Button(this);
-        menuBtn.setText("返回菜单");
-        menuBtn.setTextSize(20);
-        menuBtn.setTextColor(0xFF333333);
-        menuBtn.setPadding(40, 30, 40, 30);
-        menuBtn.setBackground(createRoundRectDrawable(0xFF9E9E9E));
-
-        menuBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                goToSelect();
-            }
-        });
-
-        layout.addView(restartBtn);
-
-        View spacer = new View(this);
-        spacer.setLayoutParams(new LinearLayout.LayoutParams(40, LinearLayout.LayoutParams.MATCH_PARENT));
-        layout.addView(spacer);
-
-        layout.addView(menuBtn);
-
-        // 3. 添加到屏幕下方
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-        );
-        params.bottomMargin = 100;
-        params.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        gameContainer.addView(layout, params);
-    }
 
     /**
      * 返回难度选择界面
@@ -315,12 +276,30 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     @Override
     public void onPictureInPictureUiStateChanged(@NonNull PictureInPictureUiState uiState) {
         super.onPictureInPictureUiStateChanged(uiState);
+        boolean isInPipMode = isInPictureInPictureMode();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             if (uiState.isStashed()) {
                 hideGameUI();
             } else {
                 showGameUI();
             }
+        }
+        // 核心修改：根据是否在PiP模式来调整SurfaceView的尺寸
+        if (gameSurfaceView != null) {
+            ViewGroup.LayoutParams params = gameSurfaceView.getLayoutParams();
+            if (isInPipMode) {
+                // 进入PiP模式，将SurfaceView的尺寸设置为充满整个小窗
+                params.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                params.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            } else {
+                // 退出PiP模式，将SurfaceView的尺寸恢复为全屏
+                params.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                params.height = ViewGroup.LayoutParams.MATCH_PARENT;
+                // 如果你的游戏有固定的全屏分辨率，也可以在这里设置具体的像素值
+                params.width = 1080;
+                params.height = 1920;
+            }
+            gameSurfaceView.setLayoutParams(params);
         }
     }
 

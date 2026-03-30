@@ -27,14 +27,14 @@ public class MediumGame extends Game{
     // 添加一个 Handler，绑定到主线程 (Looper.getMainLooper())
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private double freq = 2.0;
-    public MediumGame(Context context,int width, int height){
-        super(width, height);
-        difficultyLevel = 2;
+    public MediumGame(Context context, int width, int height,String userName,String difficultyLevel){
+        super(context,width, height,userName,difficultyLevel);
+        //difficultyLevel = 2;
         this.context=context;
         ENEMY_SPEED_X = 5;
         ENEMY_SPEED_Y = 10;
         try {
-            scoreRecords = new ScoreRecords(context);
+            scoreRecords = new ScoreRecords(context,"medium");
             // 删除 ImageIO.read 相关代码，图片由 ImageManager.init(context) 统一加载
             ImageManager.BACKGROUND_IMAGE = decodeResource(context.getResources(), R.drawable.bg3);
         } catch (Exception e) {

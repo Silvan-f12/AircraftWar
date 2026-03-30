@@ -25,16 +25,16 @@ public class DifficultGame extends Game{
     private double freq = 2.0;
     // 添加一个 Handler，绑定到主线程 (Looper.getMainLooper())
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    public DifficultGame(Context context, int width, int height){
-        super(width, height);
+    public DifficultGame(Context context, int width, int height,String userName,String difficultyLevel){
+        super(context, width, height,userName,difficultyLevel);
         //难度设置
-        difficultyLevel = 3;
+        //difficultyLevel = 3;
         this.context = context;
         ENEMY_SPEED_X = 5;
         ENEMY_SPEED_Y = 10;
         // 初始化分数记录
         try {
-            scoreRecords = new ScoreRecords(context);
+            scoreRecords = new ScoreRecords(context,"difficult");
             ImageManager.BACKGROUND_IMAGE = decodeResource(context.getResources(), R.drawable.bg5);
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize record DAO", e);

@@ -1,12 +1,13 @@
 package edu.hitsz.ScoreRecord;
 
+import edu.hitsz.Game.Game;
 import edu.hitsz.aircraft.HeroAircraft;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**class:玩家分数统计*/
-public class PlayerScore implements Serializable {
+public class PlayerScore implements Serializable, Comparable<PlayerScore> {
     private String playerName;
     private int score;
     private LocalDateTime recordTime;
@@ -35,7 +36,11 @@ public class PlayerScore implements Serializable {
         this.recordTime = recordTime;
     }
 
-
+    @Override
+    public int compareTo(PlayerScore other) {
+        // 按分数降序排列 (分数高的排在前面)
+        return Integer.compare(other.score, this.score);
+    }
 
 
     public String getTime() {

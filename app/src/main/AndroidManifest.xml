@@ -51,5 +51,8 @@
         android:resizeableActivity="true"
         android:supportsPictureInPicture="true" />
 
+    <!-- 3. 游戏结束界面 -->
+    <activity android:name=".GameOverActivity" />
+
     </application>
 </manifest>

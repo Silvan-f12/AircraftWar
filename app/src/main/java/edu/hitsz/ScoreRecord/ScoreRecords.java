@@ -1,52 +1,67 @@
 package edu.hitsz.ScoreRecord;
 
 import android.content.Context;
+import android.util.Log;
+
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.time.LocalDateTime;
+import java.util.*;
 
 /**
- * 分数记录管理 (Android 版本)
+ * 分数记录管理 (最终修复版)
+ * 增加了文件目录检查和空文件处理
  */
 public class ScoreRecords {
 
-    private static final String FILE_NAME = "score_records.dat";  // 改为 .dat 表示二进制文件
+    private static final String FILE_PREFIX = "score_records_";
+    private static final String FILE_SUFFIX = ".dat";
+
     private List<PlayerScore> scores;
     private Context context;
     private File scoreFile;
 
-    public ScoreRecords(Context context) {
-        this.context = context;
+    /**
+     * 构造函数：指定难度构造
+     * @param context
+     * @param difficultyTag 难度标签，如 "simple", "medium", "difficult"
+     */
+    public ScoreRecords(Context context, String difficultyTag) {
+        this.context = context.getApplicationContext();
         this.scores = new ArrayList<>();
 
-        // 【关键修改】使用应用内部存储目录
-        scoreFile = new File(context.getFilesDir(), FILE_NAME);
+        // 1. 生成文件名：score_records_simple.dat
+        String fileName = FILE_PREFIX + difficultyTag + FILE_SUFFIX;
 
-        // 如果文件不存在，创建它
+        // 2. 获取内部存储目录
+        File filesDir = context.getFilesDir();
+        this.scoreFile = new File(filesDir, fileName);
+
+        // 3. 【关键修复】确保目录存在
+        if (!filesDir.exists()) {
+            filesDir.mkdirs();
+        }
+
+        // 4. 如果文件不存在，创建它
         if (!scoreFile.exists()) {
             try {
-                // 确保父目录存在
-                File parentDir = scoreFile.getParentFile();
-                if (parentDir != null && !parentDir.exists()) {
-                    parentDir.mkdirs();
-                }
                 scoreFile.createNewFile();
+                System.out.println("【ScoreRecords】创建新文件: " + fileName);
             } catch (IOException e) {
-                throw new RuntimeException("Failed to create score file: " + e.getMessage(), e);
+                e.printStackTrace();
+                System.err.println("【ScoreRecords】创建文件失败: " + e.getMessage());
             }
         }
 
-        // 加载已有记录
+        // 5. 加载数据
         loadScores();
     }
 
     /**
-     * 加载分数记录 (使用对象流反序列化)
+     * 读取文件 (增加了空文件检查)
      */
-    @SuppressWarnings("unchecked")
     private void loadScores() {
+        // 如果文件不存在或大小为0，直接返回空列表
         if (!scoreFile.exists() || scoreFile.length() == 0) {
+            System.out.println("【ScoreRecords】文件为空或不存在，初始化空列表");
             return;
         }
 
@@ -54,104 +69,130 @@ public class ScoreRecords {
             Object obj = ois.readObject();
             if (obj instanceof List) {
                 scores = (List<PlayerScore>) obj;
+                System.out.println("【ScoreRecords】成功读取 " + scores.size() + " 条记录");
             }
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            // 如果读取失败，初始化为空列表
+            // 读取失败（比如格式错误），重置为空列表，防止崩溃
             scores = new ArrayList<>();
         }
     }
 
     /**
-     * 保存分数记录 (使用对象流序列化)
+     * 保存文件
      */
     private void saveScores() {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(scoreFile))) {
             oos.writeObject(scores);
             oos.flush();
+            System.out.println("【ScoreRecords】保存成功: " + scores.size() + " 条记录");
         } catch (IOException e) {
             e.printStackTrace();
+            System.err.println("【ScoreRecords】保存失败: " + e.getMessage());
         }
     }
 
-    /**
-     * 添加新分数记录
-     * @param score 分数值
-     */
-    public void addPlayerScoreRecordsScore(int score) {
-        // 创建 PlayerScore 对象（玩家名默认为 "Player"）
-        PlayerScore playerScore = new PlayerScore("Player", score, LocalDateTime.now());
-        scores.add(playerScore);
-        saveScores();
-    }
+    // --- 公共方法 ---
 
     /**
-     * 添加新分数记录（可指定玩家名）
-     * @param playerName 玩家名
-     * @param score 分数值
+     * 添加分数
      */
     public void addPlayerScoreRecordsScore(String playerName, int score) {
-        PlayerScore playerScore = new PlayerScore(playerName, score, LocalDateTime.now());
-        scores.add(playerScore);
+        if (playerName == null || playerName.trim().isEmpty()) {
+            playerName = "游客";
+        }
+        PlayerScore ps = new PlayerScore(playerName, score, java.time.LocalDateTime.now());
+        scores.add(ps);
         saveScores();
     }
 
     /**
-     * 获取所有分数记录
+     * 获取排序后的分数列表 (最高分在前)
      */
-    public List<PlayerScore> getScores() {
-        return new ArrayList<>(scores);
+    public List<PlayerScore> getSortedScores() {
+        List<PlayerScore> sortedList = new ArrayList<>(scores);
+        Collections.sort(sortedList);
+        return sortedList;
     }
-
     /**
-     * 获取所有分数值（兼容旧接口）
+     * 获取分数对应的排名
+     * @param score 待查询的分数
+     * @return 排名 (1代表最高，如果未上榜返回 -1 或 列表长度+1)
      */
-    public List<Integer> getScoreValues() {
-        List<Integer> scoreValues = new ArrayList<>();
-        for (PlayerScore ps : scores) {
-            scoreValues.add(ps.getScore());
-        }
-        return scoreValues;
-    }
+    public int getRank(int score) {
+        // 1. 获取排序后的列表（降序，最高分在最前）
+        List<PlayerScore> sortedScores = getSortedScores();
 
-    /**
-     * 获取最高分
-     */
-    public int getHighestScore() {
-        if (scores.isEmpty()) {
-            return 0;
+        // 2. 如果列表为空，直接返回 1,这是第一个分数
+        if (sortedScores == null || sortedScores.isEmpty()) {
+            return 1;
         }
-        int max = scores.get(0).getScore();
-        for (PlayerScore ps : scores) {
-            if (ps.getScore() > max) {
-                max = ps.getScore();
+
+        // 3. 遍历列表，查找分数应该插入的位置
+
+        for (int i = 0; i < sortedScores.size(); i++) {
+            PlayerScore ps = sortedScores.get(i);
+            // 如果当前分数大于等于列表中的分数，说明新分数应该排在 i 的位置
+            // +1 是因为排名从 1 开始，而数组索引从 0 开始
+            if (score >= ps.getScore()) {
+                return i + 1;
             }
         }
-        return max;
+
+        // 4. 如果分数比列表里所有人都低，排在最后
+        return sortedScores.size() + 1;
     }
 
     /**
-     * 获取最新分数
+     * 删除指定的分数记录
+     * 【修复版】不再依赖对象引用，而是根据数据内容查找删除
      */
-    public int getLatestScore() {
-        if (scores.isEmpty()) {
-            return 0;
+    public boolean deleteScore(PlayerScore targetScore) {
+        // 1. 遍历内部原始列表
+        for (PlayerScore ps : scores) {
+            // 2. 找到匹配的记录
+            // 关键修改：使用 Objects.equals() 来安全地比较字符串
+            // Objects.equals 会自动处理 null 的情况，不会报错
+            if (ps.getScore() == targetScore.getScore() &&
+                    Objects.equals(ps.getPlayerName(), targetScore.getPlayerName())) {
+
+                // 3. 从原始列表中移除
+                scores.remove(ps);
+                saveScores(); // 保存文件
+                System.out.println("【ScoreRecords】删除成功: " + ps.getPlayerName() + " - " + ps.getScore());
+                return true;
+            }
         }
-        return scores.get(scores.size() - 1).getScore();
+
+        System.err.println("【ScoreRecords】删除失败，未找到匹配记录");
+        return false;
     }
 
     /**
-     * 清空记录
+     * 获取所有记录（供界面刷新用）
      */
-    public void clear() {
-        scores.clear();
-        saveScores();
+    public List<PlayerScore> getAllScores() {
+        return new ArrayList<>(scores); // 返回副本，防止外部直接修改内部数据
     }
-
     /**
-     * 获取记录数量
+     * 【新增方法】删除所有记录
+     * 功能：清空当前难度下的所有分数记录
+     * @return boolean 是否删除成功
      */
-    public int getCount() {
-        return scores.size();
+    public boolean clearAllScores() {
+        try {
+            // 1. 清空内存中的列表
+            scores.clear();
+
+            // 2. 保存（这会写入一个空列表到文件）
+            saveScores();
+
+            System.out.println("【ScoreRecords】所有记录已清空");
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("【ScoreRecords】清空记录失败: " + e.getMessage());
+            return false;
+        }
     }
 }

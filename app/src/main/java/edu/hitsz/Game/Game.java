@@ -1,5 +1,6 @@
 package edu.hitsz.Game;
 
+import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -31,6 +32,7 @@ import java.util.List;
  */
 public abstract class Game {
 
+    private final Context context;
     private int backGroundTop = 0;
 
     // 【关键】固定时间间隔 (60FPS = 16ms)
@@ -140,11 +142,16 @@ public abstract class Game {
     // 绘图用的 Paint 对象
     private final Paint scorePaint;
 
+    protected String currentUserName; // 用于保存用户名
+    protected String currentDifficultyTag; // 用于保存难度标签 (simple,medium,difficult)
+
     // ==================== 构造函数 ====================
-    public Game(int width, int height) {
+    public Game(Context context, int width, int height,String userName,String difficultyTag) {
         this.screenWidth = width;
         this.screenHeight = height;
-
+        this.context = context;
+        this.currentUserName = userName;
+        this.currentDifficultyTag = difficultyTag; // 保存难度等级
         // 初始化英雄机
         Bitmap heroImg = ImageManager.HERO_IMAGE;
         int initW = heroImg != null ? heroImg.getWidth() : 50;
@@ -176,7 +183,9 @@ public abstract class Game {
         scorePaint.setTextSize(40);
         scorePaint.setTypeface(Typeface.DEFAULT_BOLD);
         scorePaint.setAntiAlias(true);
-
+        // 这里需要一个难度字符串，比如 "easy", "hard"
+        // 你可以根据 difficultyLevel 字段来映射
+        //String difficultyTag = mapDifficultyToTag(this.difficultyLevel);
         // 初始化观察者
         mobEnemyObserver = new MobEnemyObserver();
         eliteEnemyObserver = new EliteEnemyObserver();
@@ -188,8 +197,25 @@ public abstract class Game {
         return scoreRecords;
     }
 
-    public void insertScore(int score) {
-        scoreRecords.addPlayerScoreRecordsScore("user0", score);
+
+    public synchronized void insertScore() {
+        // 1. 防御性编程：处理空用户名
+        String safeName = this.currentUserName;
+        if (safeName == null || safeName.trim().isEmpty()) {
+            safeName = "UnknownUser";
+        }
+
+        // 2. 【关键】这里必须使用 this.currentDifficultyTag
+        // 确保简单模式存入 simple，中等模式存入 medium
+        ScoreRecords records = new ScoreRecords(context, this.currentDifficultyTag);
+
+        // 3. 执行插入
+        // 注意：这里传入的是当前对象的实时分数 this.score
+        records.addPlayerScoreRecordsScore(safeName, this.score);
+
+        System.out.println("【保存日志】用户: " + safeName +
+                " 难度: " + this.currentDifficultyTag +
+                " 分数: " + this.score + " 已保存");
     }
 
     /**
@@ -764,6 +790,15 @@ public abstract class Game {
                     }
                 }
             }
+        }
+    }
+    //根据 difficultyLevel 字段来映射
+    private String mapDifficultyToTag(int level) {
+        switch (level) {
+            case 1: return "simple";
+            case 2: return "medium";
+            case 3: return "difficult";
+            default: return "default";
         }
     }
 }

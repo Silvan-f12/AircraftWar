@@ -7,9 +7,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -26,6 +28,8 @@ import android.window.OnBackAnimationCallback;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 
+import java.util.Random;
+
 public class SelectActivity extends AppCompatActivity {
 
     private LinearLayout buttonContainer;
@@ -39,6 +43,8 @@ public class SelectActivity extends AppCompatActivity {
     // 新增：独立的音效音量控制 UI
     private SeekBar sfxVolumeSeekBar;
     private TextView sfxVolumeValueText;
+    // 新增：声明用户名输入框
+    private EditText usernameInput;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable navigationRunnable;
@@ -221,8 +227,47 @@ public class SelectActivity extends AppCompatActivity {
     private void initDifficultySection() {
         TextView titleText = findViewById(R.id.titleText);
         buttonContainer = findViewById(R.id.buttonContainer);
-        if (buttonContainer == null) return;
+        // 2. 【关键修复】如果 XML 里没找到，就创建一个 LinearLayout 当作容器
+        if (buttonContainer == null) {
+            // 如果 XML 里没定义 buttonContainer，我们就自己 new 一个
+            buttonContainer = new LinearLayout(this);
+            buttonContainer.setOrientation(LinearLayout.VERTICAL);
+            buttonContainer.setId(R.id.buttonContainer); // 如果有定义 id 资源的话，或者直接加到父布局
+            // 注意：如果 XML 里没定义，我们需要把这个容器加到页面的某个位置
+            // 为了简单，我们直接把整个 Activity 的内容视图设为这个容器（仅作演示，实际推荐修复 XML）
+            setContentView(buttonContainer);
+            Log.e("SelectActivity", "Warning: XML 中未找到 buttonContainer，正在动态创建...");
+        }
         buttonContainer.removeAllViews();
+
+        // --- 新增：创建用户名输入框 ---
+        LinearLayout inputRow = new LinearLayout(this);
+        inputRow.setOrientation(LinearLayout.HORIZONTAL);
+        inputRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        inputRow.setPadding(40, 40, 40, 20); // 左右内边距 40，上边距 40，下边距 20
+
+        TextView label = new TextView(this);
+        label.setText("用户名: ");
+        label.setTextSize(16);
+        label.setTextColor(0xFF333333);
+
+        usernameInput = new EditText(this);
+        usernameInput.setHint("请输入昵称");
+        usernameInput.setTextSize(16);
+        usernameInput.setPadding(20, 10, 20, 10);
+
+        // 设置默认文本（可选，比如 "Player" + 随机数）
+        // usernameInput.setText("Player" + new Random().nextInt(100));
+
+        LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        inputParams.setMargins(10, 0, 0, 0);
+        usernameInput.setLayoutParams(inputParams);
+
+        inputRow.addView(label);
+        inputRow.addView(usernameInput);
+        buttonContainer.addView(inputRow); // 将输入框添加到布局中
+        // --- 输入框创建结束 ---
 
         for (int i = 0; i < difficultyLevels.length; i++) {
             final String level = difficultyLevels[i];
@@ -273,10 +318,16 @@ public class SelectActivity extends AppCompatActivity {
         Intent intent = new Intent(SelectActivity.this, MainActivity.class);
         intent.putExtra("DIFFICULTY", level);
 
-        // --- 关键：传递两个参数 ---
+        // --- 新增：获取输入框文本并传递 ---
+        // 如果输入框为空，给一个默认值
+        String userName = usernameInput.getText().toString().trim();
+        if (userName.isEmpty()) userName = "游客" + new Random().nextInt(100);
+        intent.putExtra("USERNAME", userName);
+        // --- 新增结束 ---
+
         intent.putExtra("AUDIO_ENABLED", isAudioEnabled);
-        intent.putExtra("BGM_VOLUME", currentBgmVolume);   // 背景音乐音量
-        intent.putExtra("SFX_VOLUME", currentSfxVolume);   // 音效音量 (新增)
+        intent.putExtra("BGM_VOLUME", currentBgmVolume);
+        intent.putExtra("SFX_VOLUME", currentSfxVolume);
         startActivity(intent);
         overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
     }

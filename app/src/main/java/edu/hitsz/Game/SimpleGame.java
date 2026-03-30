@@ -15,16 +15,16 @@ public class SimpleGame extends Game {
     private ScoreRecords scoreRecords;
     private Context context;
     // 构造函数需要传入 width 和 height，调用父类构造
-    public SimpleGame(Context context,int width, int height) {
-        super(width, height);
+    public SimpleGame(Context context, int width, int height,String userName,String difficultyLevel) {
+        super(context,width, height, userName,difficultyLevel);
         //难度设置
-        difficultyLevel = 1;
+        //difficultyLevel = 1;
         this.context = context;
         ENEMY_SPEED_X = 5;
         ENEMY_SPEED_Y = 10;
         // 初始化分数记录
         try {
-            scoreRecords = new ScoreRecords(context);
+            scoreRecords = new ScoreRecords(context,"simple");
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize record DAO", e);
         }
