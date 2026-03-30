@@ -104,6 +104,8 @@ public abstract class Game {
      * 设置不同难度精英机的血量
      */
     protected int eliteEnemyHp = 60;
+    protected int mobEnemyHp = 30;
+    protected int bossHp = 2400;
     protected int bossScoreTheshold = 1200;
 
     // 定义道具产生频率
@@ -311,9 +313,9 @@ public abstract class Game {
                     (int) (Math.random() * screenHeight * 0.05),
                     0,
                     ENEMY_SPEED_Y,
-                    eliteEnemyHp / 2
+                    mobEnemyHp
             );
-            mobEnemy.setScore(20);
+            mobEnemy.setScore(5);
             enemyAircrafts.add(mobEnemy);
         }
     }
@@ -431,11 +433,7 @@ public abstract class Game {
         // 获得分数
         score += enemyAircraft.getScore();
 
-        // 普通敌机不掉落道具
-        if (enemyAircraft instanceof MobEnemy) {
-            enemyAircraft.vanish();
-            return;
-        }
+
 
         // 精英敌机掉落道具
         if (enemyAircraft instanceof EliteEnemyAircraft ||
@@ -499,6 +497,8 @@ public abstract class Game {
             enemyAircraft.vanish();
             AudioManager.getInstance().stopBgm();
         }
+        //如果是普通敌机 (MobEnemy)，什么都不做，直接让其消失即可
+        enemyAircraft.vanish();
     }
 
     /**

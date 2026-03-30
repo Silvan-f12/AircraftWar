@@ -52,7 +52,7 @@ public class MediumGame extends Game{
                     100,
                     (int) randBossSpeedX,
                     0,
-                    800
+                    1200
             );
             AudioManager.getInstance().playBgm(R.raw.bgm_boss);
             bossEnemyAircraft.setScore(50);

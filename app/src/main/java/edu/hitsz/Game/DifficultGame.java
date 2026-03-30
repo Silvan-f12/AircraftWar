@@ -47,7 +47,7 @@ public class DifficultGame extends Game{
         if(score >= bossScoreThreshold && (score % bossScoreThreshold <= 50 )&& bossFlags == 0) {
             double randBossSpeedX = Math.random() * (2*MAX_SPEED_X+1)-MAX_SPEED_X;
             enemyBossFactory = new BossEnemyFactory();
-            int bossHp = 800+100*bossCnt;
+            int bossHp = 1200+240*bossCnt;
             AbstractEnemyAircraft bossEnemy = enemyBossFactory.createEnemyAircraft(
                     (int) (Math.random() * (MySurfaceView.WINDOW_WIDTH - ImageManager.MOB_ENEMY_IMAGE.getWidth())),
                     100,

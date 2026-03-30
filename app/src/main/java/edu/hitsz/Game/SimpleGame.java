@@ -48,7 +48,7 @@ public class SimpleGame extends Game {
                     50,               // Y 位置
                     ENEMY_SPEED_X,                // 水平速度
                     ENEMY_SPEED_Y,                // 垂直速度
-                    200               // 血量
+                    1200               // 血量
             );
 
             if (boss != null) {
