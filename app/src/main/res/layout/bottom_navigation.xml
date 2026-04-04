@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.tabs.TabLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottomNavigation"
+    android:layout_width="match_parent"
+    android:layout_height="60dp"
+    android:background="#F5F5F5"
+    android:contentDescription="@string/bottom_navigation_desc"
+    app:tabMode="fixed"
+    app:tabGravity="center"
+    app:tabIndicatorColor="#FF5722"
+    app:tabSelectedTextColor="#FF5722"
+    app:tabTextColor="#666666"
+    app:tabPaddingStart="60dp"
+    app:tabPaddingEnd="60dp" />
