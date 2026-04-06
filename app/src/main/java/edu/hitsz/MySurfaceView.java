@@ -315,6 +315,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         if (game != null && !game.isGameOver()) {
             int action = event.getAction();
             if (action == MotionEvent.ACTION_MOVE || action == MotionEvent.ACTION_DOWN) {
+                // 这里是游戏内拖拽英雄机，不是页面/Tab切换手势。
                 // 获取触摸坐标
                 float x = event.getX();
                 float y = event.getY();

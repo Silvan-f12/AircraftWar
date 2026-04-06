@@ -48,9 +48,11 @@ public class GameOverActivity extends AppCompatActivity {
         // 4. 填充数据
         tvScore.setText(String.valueOf(finalScore));
         tvLevel.setText(currentLevel);
-        ScoreRecords scoreRecords = new ScoreRecords(this, currentLevel);
+        // 映射难度为英文标签
+        String difficultyTag = getDifficultyTag(currentLevel);
+        ScoreRecords scoreRecords = new ScoreRecords(this, difficultyTag);
         // 【调试】打印当前 Activity 打算读取的文件名
-        System.out.println("【GameOverActivity】正在尝试读取文件/Key: " + currentLevel);
+        System.out.println("【GameOverActivity】正在尝试读取文件/Key: " + difficultyTag);
         // 这里可以写一个排名信息
         int rank = scoreRecords.getRank(finalScore);
         // 4. 根据排名显示不同的提示语
@@ -98,7 +100,12 @@ public class GameOverActivity extends AppCompatActivity {
         });
     }
 
-
-
-
+    private String getDifficultyTag(String level) {
+        switch (level) {
+            case "简单模式": return "simple";
+            case "中等模式": return "medium";
+            case "困难模式": return "difficult";
+            default: return "simple";
+        }
+    }
 }

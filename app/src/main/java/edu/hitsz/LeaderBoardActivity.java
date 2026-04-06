@@ -1,6 +1,7 @@
 package edu.hitsz;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
@@ -15,31 +16,31 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.app.AlertDialog;
+
+// 注意：这里不要导入 android.view.ActionMode
+// 注意：这里不要导入 android.support.v7.app.AppCompatActivity
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.view.ActionMode; // 引入 ActionMode
+import androidx.appcompat.app.AppCompatActivity; // 只保留这个
+import androidx.appcompat.view.ActionMode; // 只保留这个，用于 Callback
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import edu.hitsz.ScoreRecord.PlayerScore;
 import edu.hitsz.ScoreRecord.ScoreRecords;
 
 public class LeaderBoardActivity extends AppCompatActivity {
 
-    private RadioGroup bottomNavigation;
-    private ChipGroup rgDifficultySwitch; // 这个改成 ChipGroup
+    private TabLayout bottomNavigation;
+    private TabLayout tabLayoutDifficulty; // 改为 TabLayout
     private RecyclerView rvRankingList;
 
     // 当前活动的 ActionMode (用于多选删除)
@@ -48,12 +49,6 @@ public class LeaderBoardActivity extends AppCompatActivity {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable navigationRunnable;
-
-    private final Map<Integer, String> difficultyTagMap = Map.of(
-            R.id.rbSimple, "simple",
-            R.id.rbMedium, "medium",
-            R.id.rbDifficult, "difficult"
-    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +59,7 @@ public class LeaderBoardActivity extends AppCompatActivity {
         // 1. 确保文件顶部有这行 import (如果没有，打出来让AS自动导)
 
         // 2.模式切换
-        rgDifficultySwitch = findViewById(R.id.rgDifficultySwitch); // 现在 ChipGroup 可以正确接收 ChipGroup 了
+        tabLayoutDifficulty = findViewById(R.id.tabLayoutDifficulty); // 现在 TabLayout 可以正确接收 TabLayout 了
         bottomNavigation = findViewById(R.id.bottomNavigation);
         //添加一键清空
         Button btnReset = findViewById(R.id.btnReset); // 推荐：在 XML 中定义
@@ -82,9 +77,8 @@ public class LeaderBoardActivity extends AppCompatActivity {
                         .setMessage("确定要清空当前难度的所有记录吗？此操作不可恢复！")
                         .setPositiveButton("清空", (dialog, which) -> {
                             // 获取当前选中的难度
-                            int selectedId = rgDifficultySwitch.getCheckedChipId();
-                            String currentTag = difficultyTagMap.get(selectedId);
-                            if (currentTag == null) currentTag = "simple";
+                            int selectedPosition = tabLayoutDifficulty.getSelectedTabPosition();
+                            String currentTag = getTagFromPosition(selectedPosition);
 
                             // 执行清空
                             ScoreRecords records = new ScoreRecords(this, currentTag);
@@ -103,20 +97,53 @@ public class LeaderBoardActivity extends AppCompatActivity {
             });
         }
         rvRankingList.setLayoutManager(new LinearLayoutManager(this));
+        //在页面初始化时挂载滑动能力
+        setupDifficultySwipeWithRecyclerView();
 
-        // 难度切换
-        rgDifficultySwitch.setOnCheckedChangeListener((group, checkedId) -> {
-            String tag = difficultyTagMap.get(checkedId);
-            if (tag != null) loadAndDisplayRankings(tag);
+        // 初始化 TabLayout
+        tabLayoutDifficulty.addTab(tabLayoutDifficulty.newTab().setText("简单模式"));
+        tabLayoutDifficulty.addTab(tabLayoutDifficulty.newTab().setText("中等模式"));
+        tabLayoutDifficulty.addTab(tabLayoutDifficulty.newTab().setText("困难模式"));
+
+        // 难度切换监听器
+        tabLayoutDifficulty.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                String tag = getTagFromPosition(tab.getPosition());
+                loadAndDisplayRankings(tag);
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {}
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {}
         });
 
         // 底部导航
-        bottomNavigation.setOnCheckedChangeListener((group, checkedId) -> {
-            if (navigationRunnable != null) handler.removeCallbacks(navigationRunnable);
-            if (checkedId == R.id.rbHome) {
-                navigationRunnable = () -> startActivity(new Intent(LeaderBoardActivity.this, SelectActivity.class));
-                handler.postDelayed(navigationRunnable, 200);
+        // 添加Tab
+        TabLayout.Tab homeTab = bottomNavigation.newTab().setText("首页");
+        TabLayout.Tab leaderboardTab = bottomNavigation.newTab().setText("排行榜");
+        bottomNavigation.addTab(homeTab);
+        bottomNavigation.addTab(leaderboardTab);
+
+        // 默认选中排行榜
+        bottomNavigation.selectTab(leaderboardTab);
+
+        bottomNavigation.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                if (navigationRunnable != null) handler.removeCallbacks(navigationRunnable);
+                if (tab.getPosition() == 0) { // 首页
+                    startActivity(new Intent(LeaderBoardActivity.this, SelectActivity.class));
+                }
             }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {}
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {}
         });
 
         loadAndDisplayRankings("simple");
@@ -125,12 +152,9 @@ public class LeaderBoardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // 获取当前选中的难度
-        int selectedId = rgDifficultySwitch.getCheckedChipId();
-        String currentTag = difficultyTagMap.get(selectedId);
-        if (currentTag == null) {
-            currentTag = "simple"; // 默认值兜底
-        }
+        // 获取当前选中的Tab
+        int selectedPosition = tabLayoutDifficulty.getSelectedTabPosition();
+        String currentTag = getTagFromPosition(selectedPosition);
         // 重新加载数据
         loadAndDisplayRankings(currentTag);
     }
@@ -235,44 +259,42 @@ public class LeaderBoardActivity extends AppCompatActivity {
          */
         private void startChoiceMode() {
             isChoiceMode = true;
-            // 启动 ActionMode，传入自定义回调
+            // 注意：这里使用 androidx 的 Callback
             currentActionMode = startSupportActionMode(new ActionMode.Callback() {
 
-                // 1. 创建菜单：这里手动添加“删除”按钮
+                // 1. onCreateActionMode: 参数必须是 androidx.appcompat.view.ActionMode
                 @Override
                 public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                    // 参数：组ID，项ID，顺序，标题
                     menu.add(Menu.NONE, 101, Menu.NONE, "删除选中");
                     return true;
                 }
 
-                // 2. 准备菜单（通常留空）
+                // 2. onPrepareActionMode: 参数必须是 androidx.appcompat.view.ActionMode
                 @Override
                 public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
                     return false;
                 }
 
-                // 3. 处理菜单点击：处理删除逻辑
+                // 3. onActionItemClicked: 参数必须是 androidx.appcompat.view.ActionMode
                 @Override
                 public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-                    if (item.getItemId() == 101) { // 如果点击的是“删除选中”
-                        deleteSelectedItems(); // 调用删除方法
+                    if (item.getItemId() == 101) {
+                        deleteSelectedItems();
                         return true;
                     }
                     return false;
                 }
 
-                // 4. 销毁菜单：退出多选模式
+                // 4. onDestroyActionMode: 参数必须是 androidx.appcompat.view.ActionMode
                 @Override
                 public void onDestroyActionMode(ActionMode mode) {
-                    isChoiceMode = false;
-                    selectedItems.clear();
                     currentActionMode = null;
-                    notifyDataSetChanged(); // 刷新列表，隐藏 CheckBox
+                    isChoiceMode = false; // 退出模式
+                    selectedItems.clear(); // 清空选择
+                    notifyDataSetChanged(); // 恢复UI
                 }
             });
 
-            // 设置初始标题
             if (currentActionMode != null) {
                 currentActionMode.setTitle("已选择 0 项");
             }
@@ -370,6 +392,82 @@ public class LeaderBoardActivity extends AppCompatActivity {
             if ("simple".equals(tag)) return "【 简单模式 】";
             else if ("medium".equals(tag)) return "【 中等模式 】";
             else return "【 困难模式 】";
+        }
+    }
+
+    private String getTagFromPosition(int position) {
+        switch (position) {
+            case 0: return "simple";
+            case 1: return "medium";
+            case 2: return "difficult";
+            default: return "simple";
+        }
+    }
+
+    /**
+     * 在排行榜列表里支持左右滑动切换难度（简单/中等/困难）
+     * 使用 RecyclerView 内建的横向滑动手势切换难度 Tab。
+     * 这样依赖系统/AndroidX控件能力，不手写底层触摸解析，兼容性更稳定。
+     */
+    private void setupDifficultySwipeWithRecyclerView() {
+        ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(
+                0,
+                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT
+        ) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                // 这是排行榜页，不做Item删除；立即恢复条目，避免UI被划走。
+                int adapterPosition = viewHolder.getAdapterPosition();
+                if (adapterPosition != RecyclerView.NO_POSITION && rvRankingList.getAdapter() != null) {
+                    rvRankingList.getAdapter().notifyItemChanged(adapterPosition);
+                }
+
+                // 多选删除模式下，优先保留原有交互，不触发难度切换。
+                if (currentActionMode != null) {
+                    return;
+                }
+
+                if (direction == ItemTouchHelper.LEFT) {
+                    switchDifficultyByOffset(1);
+                } else if (direction == ItemTouchHelper.RIGHT) {
+                    switchDifficultyByOffset(-1);
+                }
+            }
+        };
+        new ItemTouchHelper(callback).attachToRecyclerView(rvRankingList);
+    }
+
+    /**
+     * switchDifficultyByOffset(int offset) 负责左右切换并做边界保护（不会越界）。
+     */
+    private void switchDifficultyByOffset(int offset) {
+        int tabCount = tabLayoutDifficulty.getTabCount();
+        if (tabCount <= 0) {
+            return;
+        }
+        int current = tabLayoutDifficulty.getSelectedTabPosition();
+        if (current == -1) {
+            current = 0;
+        }
+        int target = current + offset;
+        if (target < 0) {
+            target = 0;
+        } else if (target >= tabCount) {
+            target = tabCount - 1;
+        }
+
+        if (target != current) {
+            TabLayout.Tab targetTab = tabLayoutDifficulty.getTabAt(target);
+            if (targetTab != null) {
+                targetTab.select();
+            }
         }
     }
 }

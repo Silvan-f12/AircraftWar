@@ -426,7 +426,8 @@ public abstract class Game {
      * 敌机摧毁获得道具和分数
      */
     public void EnemyCrashGetScoreAndProp(AbstractAircraft enemyAircraft) {
-        if (enemyAircraft.notValid()) {
+        // 仅在敌机被击毁后结算，避免“命中即加分”或漏加分。
+        if (!enemyAircraft.notValid()) {
             return;
         }
 
@@ -528,7 +529,9 @@ public abstract class Game {
                 if (enemyAircraft.crash(bullet)) {
                     enemyAircraft.decreaseHp(bullet.getPower());
                     bullet.vanish();
-                    EnemyCrashGetScoreAndProp(enemyAircraft);
+                    if (enemyAircraft.notValid()) {
+                        EnemyCrashGetScoreAndProp(enemyAircraft);
+                    }
                     AudioManager.getInstance().playSound("bullet_hit");
                 }
                 // 英雄机与敌机相撞

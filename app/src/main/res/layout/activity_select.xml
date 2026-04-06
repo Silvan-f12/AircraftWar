@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -38,43 +39,6 @@
     </LinearLayout>
 
     <!-- 【下半部分】底部导航栏 (固定高度，样式统一) -->
-    <RadioGroup
-        android:id="@+id/bottomNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:orientation="horizontal"
-        android:background="#F5F5F5"
-
-        android:padding="0dp">
-
-        <RadioButton
-            android:id="@+id/rbHome"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:checked="true"
-            android:button="@null"
-            android:gravity="center_horizontal"
-            android:paddingTop="8dp"
-            android:paddingBottom="4dp"
-            android:text="首页"
-            android:textColor="#333333"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <RadioButton
-            android:id="@+id/rbLeaderboard"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:button="@null"
-            android:gravity="center_horizontal"
-            android:text="排行榜"
-            android:textColor="#666666"
-            android:textSize="16sp"
-            android:paddingTop="8dp"
-            android:paddingBottom="4dp"/>
-
-    </RadioGroup>
+    <include layout="@layout/bottom_navigation" />
 
 </LinearLayout>

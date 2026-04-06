@@ -13,28 +13,22 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
+
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.os.BuildCompat;
 
-import android.window.BackEvent;
-import android.window.OnBackAnimationCallback;
-import android.window.OnBackInvokedCallback;
-import android.window.OnBackInvokedDispatcher;
+import com.google.android.material.tabs.TabLayout;
+
 
 import java.util.Random;
 
 public class SelectActivity extends AppCompatActivity {
 
     private LinearLayout buttonContainer;
-    private RadioGroup bottomNavigation;
-    private RadioButton rbHome, rbLeaderboard;
+    private TabLayout bottomNavigation;
 
     // 新增：音频控制 UI
     private SeekBar volumeSeekBar;
@@ -77,8 +71,8 @@ public class SelectActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (isInitialized && bottomNavigation != null) {
-            if (bottomNavigation.getCheckedRadioButtonId() != R.id.rbHome) {
-                rbHome.setChecked(true);
+            if (bottomNavigation.getSelectedTabPosition() != 0) {
+                bottomNavigation.selectTab(bottomNavigation.getTabAt(0));
             }
         }
         // 同步 UI 状态
@@ -293,14 +287,21 @@ public class SelectActivity extends AppCompatActivity {
      * 底部导航栏样式，首页和排行榜两种功能*/
     private void initBottomNavigationBar() {
         bottomNavigation = findViewById(R.id.bottomNavigation);
-        rbHome = findViewById(R.id.rbHome);
-        rbLeaderboard = findViewById(R.id.rbLeaderboard);
-        rbHome.setChecked(true);
 
-        bottomNavigation.setOnCheckedChangeListener((group, checkedId) -> {
-            if (navigationRunnable != null) handler.removeCallbacks(navigationRunnable);
-            if (checkedId == R.id.rbLeaderboard) {
-                navigationRunnable = () -> {
+        // 添加Tab
+        TabLayout.Tab homeTab = bottomNavigation.newTab().setText("首页");
+        TabLayout.Tab leaderboardTab = bottomNavigation.newTab().setText("排行榜");
+        bottomNavigation.addTab(homeTab);
+        bottomNavigation.addTab(leaderboardTab);
+
+        // 默认选中首页
+        bottomNavigation.selectTab(homeTab);
+
+        bottomNavigation.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                if (navigationRunnable != null) handler.removeCallbacks(navigationRunnable);
+                if (tab.getPosition() == 1) { // 排行榜
                     Intent intent = new Intent(SelectActivity.this, LeaderBoardActivity.class);
                     startActivity(intent);
                     if (Build.VERSION.SDK_INT >= 35) {
@@ -308,9 +309,14 @@ public class SelectActivity extends AppCompatActivity {
                     } else {
                         overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
                     }
-                };
-                handler.postDelayed(navigationRunnable, 200);
+                }
             }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {}
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {}
         });
     }
 
