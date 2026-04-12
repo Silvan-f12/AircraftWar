@@ -22,7 +22,9 @@ import java.io.IOException;
 public class DifficultGame extends Game{
     private ScoreRecords scoreRecords;
     private Context context;
-    private double freq = 2.0;
+    // 敌机射击间隔系数，实际间隔 = cycleDuration * freq
+    // 困难模式保留高压感，但避免过快到不可玩
+    private double freq = 3.0;
     // 添加一个 Handler，绑定到主线程 (Looper.getMainLooper())
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     public DifficultGame(Context context, int width, int height,String userName,String difficultyLevel){
@@ -86,8 +88,8 @@ public class DifficultGame extends Game{
 
         if(time > 0 && time % 15000 == 0) {
             // 防止频率过低导致除以零或负数，设置下限
-            if (freq > 0.5) {
-                freq -= 0.4;
+            if (freq >= 1.2) {
+                freq -= 0.2;
             }
             //System.out.println("游戏难度提升！子弹发射频率加快！子弹发射频率为"+freq*cycleDuration);
             String msg = "难度提升！敌方火力变猛了！";

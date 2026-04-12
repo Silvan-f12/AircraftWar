@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -52,9 +53,34 @@ public class SelectActivity extends AppCompatActivity {
     private final String[] difficultyLevels = {"简单模式", "中等模式", "困难模式"};
     private final int[] levelColors = {0xFF4CAF50, 0xFFFF9800, 0xFFF44336};
 
+    /**
+     * dp 转 px，统一代码创建控件时的尺寸单位。
+     */
+    private int dp(int value) {
+        return Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                value,
+                getResources().getDisplayMetrics()
+        ));
+    }
+
+    /**
+     * dp(float) 转 px，给圆角等浮点型尺寸使用。
+     */
+    private float dpF(float value) {
+        return TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                value,
+                getResources().getDisplayMetrics()
+        );
+    }
+
     //private OnBackInvokedCallback mBackCallback;
 
     @Override
+    /**
+     * 入口：初始化页面结构、难度区域、音频控制和底部导航。
+     */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select);
@@ -68,6 +94,9 @@ public class SelectActivity extends AppCompatActivity {
     }
 
     @Override
+    /**
+     * 页面回到前台时，同步导航选中态和音量控件显示值。
+     */
     protected void onResume() {
         super.onResume();
         if (isInitialized && bottomNavigation != null) {
@@ -86,6 +115,9 @@ public class SelectActivity extends AppCompatActivity {
     }
 
     @Override
+    /**
+     * 页面离开前台时，清理可能挂起的延迟跳转任务。
+     */
     protected void onPause() {
         super.onPause();
         if (navigationRunnable != null) {
@@ -100,7 +132,7 @@ public class SelectActivity extends AppCompatActivity {
         // 外层容器
         LinearLayout audioLayout = new LinearLayout(this);
         audioLayout.setOrientation(LinearLayout.VERTICAL);
-        audioLayout.setPadding(40, 20, 40, 20);
+        audioLayout.setPadding(dp(20), dp(10), dp(20), dp(10));
 
         // --- 第一行：总开关 ---
         LinearLayout switchRow = new LinearLayout(this);
@@ -150,7 +182,7 @@ public class SelectActivity extends AppCompatActivity {
         LinearLayout volumeRow = new LinearLayout(this);
         volumeRow.setOrientation(LinearLayout.HORIZONTAL);
         volumeRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        volumeRow.setPadding(0, 10, 0, 0);
+        volumeRow.setPadding(0, dp(5), 0, 0);
 
         // 1. 标签
         TextView label = new TextView(this);
@@ -165,7 +197,7 @@ public class SelectActivity extends AppCompatActivity {
         seekBar.setEnabled(isAudioEnabled);
 
         LinearLayout.LayoutParams seekParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
-        seekParams.setMargins(20, 0, 20, 0);
+        seekParams.setMargins(dp(10), 0, dp(10), 0);
         seekBar.setLayoutParams(seekParams);
 
         // 3. 数值文本
@@ -173,7 +205,7 @@ public class SelectActivity extends AppCompatActivity {
         valueText.setText((int)(initialVolume * 100) + "%");
         valueText.setTextSize(14);
         valueText.setTextColor(isAudioEnabled ? 0xFF666666 : 0xFFCCCCCC);
-        valueText.setWidth(100);
+        valueText.setWidth(dp(50));
 
         // 4. 绑定滑块事件
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -218,6 +250,9 @@ public class SelectActivity extends AppCompatActivity {
         parent.addView(volumeRow);
     }
 
+    /**
+     * 初始化难度选择区域（标题、用户名输入、难度按钮）。
+     */
     private void initDifficultySection() {
         TextView titleText = findViewById(R.id.titleText);
         buttonContainer = findViewById(R.id.buttonContainer);
@@ -238,7 +273,7 @@ public class SelectActivity extends AppCompatActivity {
         LinearLayout inputRow = new LinearLayout(this);
         inputRow.setOrientation(LinearLayout.HORIZONTAL);
         inputRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        inputRow.setPadding(40, 40, 40, 20); // 左右内边距 40，上边距 40，下边距 20
+        inputRow.setPadding(dp(20), dp(20), dp(20), dp(10)); // 使用 dp 保证跨设备一致
 
         TextView label = new TextView(this);
         label.setText("用户名: ");
@@ -248,14 +283,14 @@ public class SelectActivity extends AppCompatActivity {
         usernameInput = new EditText(this);
         usernameInput.setHint("请输入昵称");
         usernameInput.setTextSize(16);
-        usernameInput.setPadding(20, 10, 20, 10);
+        usernameInput.setPadding(dp(10), dp(5), dp(10), dp(5));
 
         // 设置默认文本（可选，比如 "Player" + 随机数）
         // usernameInput.setText("Player" + new Random().nextInt(100));
 
         LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        inputParams.setMargins(10, 0, 0, 0);
+        inputParams.setMargins(dp(5), 0, 0, 0);
         usernameInput.setLayoutParams(inputParams);
 
         inputRow.addView(label);
@@ -277,7 +312,7 @@ public class SelectActivity extends AppCompatActivity {
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
-            params.setMargins(0, 20, 0, 20);
+            params.setMargins(0, dp(10), 0, dp(10));
             btn.setLayoutParams(params);
             buttonContainer.addView(btn);
         }
@@ -320,6 +355,9 @@ public class SelectActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * 进入游戏页并携带当前选择的难度、用户名和音频配置。
+     */
     private void startGame(String level) {
         Intent intent = new Intent(SelectActivity.this, MainActivity.class);
         intent.putExtra("DIFFICULTY", level);
@@ -338,16 +376,19 @@ public class SelectActivity extends AppCompatActivity {
         overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
     }
 
+    /**
+     * 统一设置难度按钮样式和点击行为。
+     */
     private void setupStyledButton(Button btn, String text, int borderColor, View.OnClickListener listener) {
         btn.setText(text);
         btn.setTextSize(20);
         btn.setTextColor(0xFF333333);
-        btn.setPadding(50, 40, 50, 40);
+        btn.setPadding(dp(25), dp(20), dp(25), dp(20));
         GradientDrawable drawable = new GradientDrawable();
         drawable.setShape(GradientDrawable.RECTANGLE);
-        drawable.setCornerRadius(50f);
+        drawable.setCornerRadius(dpF(25f));
         drawable.setColor(0x00000000);
-        drawable.setStroke(4, borderColor);
+        drawable.setStroke(dp(2), borderColor);
         btn.setBackground(drawable);
         btn.setOnClickListener(listener);
     }

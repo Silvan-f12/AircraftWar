@@ -144,6 +144,11 @@ public abstract class Game {
     // 绘图用的 Paint 对象
     private final Paint scorePaint;
 
+    // 统一按屏幕比例定义 HUD 位置，避免固定像素在不同设备上偏移
+    private static final float HUD_MARGIN_X_RATIO = 0.02f;
+    private static final float HUD_SCORE_Y_RATIO = 0.08f;
+    private static final float HUD_LINE_GAP_RATIO = 0.03f;
+
     protected String currentUserName; // 用于保存用户名
     protected String currentDifficultyTag; // 用于保存难度标签 (simple,medium,difficult)
 
@@ -539,7 +544,7 @@ public abstract class Game {
                     enemyAircraft.decreaseHp(Integer.MAX_VALUE);
                     enemyAircraft.vanish();
                     heroAircraft.decreaseHp(Integer.MAX_VALUE);
-                    AudioManager.getInstance().playSound("game)over");
+                    AudioManager.getInstance().playSound("game_over");
                 }
             }
         }
@@ -662,13 +667,17 @@ public abstract class Game {
 
         // 绘制分数和血量
         scorePaint.setColor(Color.RED);
-        canvas.drawText("SCORE: " + score, 20, 150, scorePaint);
-        canvas.drawText("LIFE: " + heroAircraft.getHp(), 20, 190, scorePaint);
+        scorePaint.setTextSize(Math.max(28f, screenHeight * 0.028f));
+        float hudX = screenWidth * HUD_MARGIN_X_RATIO;
+        float hudScoreY = screenHeight * HUD_SCORE_Y_RATIO;
+        float hudLifeY = hudScoreY + screenHeight * HUD_LINE_GAP_RATIO;
+        canvas.drawText("SCORE: " + score, hudX, hudScoreY, scorePaint);
+        canvas.drawText("LIFE: " + heroAircraft.getHp(), hudX, hudLifeY, scorePaint);
 
         // 游戏结束提示
         if (gameOverFlag) {
             scorePaint.setColor(Color.WHITE);
-            scorePaint.setTextSize(60);
+            scorePaint.setTextSize(Math.max(44f, screenHeight * 0.055f));
             String text = "GAME OVER";
             float textWidth = scorePaint.measureText(text);
             canvas.drawText(text, (screenWidth - textWidth) / 2, screenHeight / 2, scorePaint);

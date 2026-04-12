@@ -63,6 +63,10 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     };
     private static final long EXIT_TIME_DELAY = 2000;
     AudioManager audioManager = AudioManager.getInstance();
+
+    /**
+     * 入口：初始化图像/音频资源，读取启动参数并创建对应难度的游戏实例。
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,7 +78,8 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         // 预加载音效 (定义好映射关系)
         Map<String, Integer> sounds = new HashMap<>();
         sounds.put("bullet_hit", R.raw.bullet_hit);      // 对应 res/raw/bullet_hit.wav
-        sounds.put("enemy_explosion", R.raw.bomb_explosion);  // 对应 res/raw/explosion.ogg
+        sounds.put("enemy_explosion", R.raw.bomb_explosion);  // 兼容旧调用
+        sounds.put("bomb_explosion", R.raw.bomb_explosion);   // 炸弹道具实际使用的键
         sounds.put("bullet", R.raw.bullet);
         sounds.put("get_supply",R.raw.get_supply);
         sounds.put("game_over",R.raw.game_over);
@@ -118,6 +123,9 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         setupOnBackPressedCallback();
     }
 
+    /**
+     * 按难度创建游戏对象并绑定到 SurfaceView，同时重置运行状态。
+     */
     private void startGame(String level) {
         Log.d("MainActivity", "Starting game: " + level);
         gameContainer.removeAllViews();
@@ -176,6 +184,9 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     }
 
     @Override
+    /**
+     * 游戏结束回调：落盘分数并跳转到结算页展示结果。
+     */
     public void onGameOver(int score) {
         Log.d("Game", "Game Over! Score: " + score);
         if (game != null) {
@@ -184,8 +195,8 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         isGameStarted = false;
         isGamePaused = true;
 
-        // 2. 使用 Handler 延迟一点或者直接跳转
-        // 如果需要立即跳转，不需要 Handler；如果想等动画结束，可以加个延迟
+        // 2. 使用 Handler 跳转
+        
         new Handler(Looper.getMainLooper()).post(() -> {
             Intent intent = new Intent(MainActivity.this, GameOverActivity.class);
             intent.putExtra("FINAL_SCORE", score);
@@ -261,6 +272,9 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     // --- 小窗模式 (PiP) 相关 ---
 
     @Override
+    /**
+     * 用户离开应用时尝试进入画中画，保持游戏上下文。
+     */
     public void onUserLeaveHint() {
         super.onUserLeaveHint();
         if (isGameStarted) {
@@ -274,6 +288,9 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     }
 
     @Override
+    /**
+     * PiP UI 状态变化回调：根据窗口状态暂停/恢复并调整画面尺寸。
+     */
     public void onPictureInPictureUiStateChanged(@NonNull PictureInPictureUiState uiState) {
         super.onPictureInPictureUiStateChanged(uiState);
         boolean isInPipMode = isInPictureInPictureMode();
@@ -303,6 +320,9 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         }
     }
 
+    /**
+     * 隐藏游戏交互层（当前策略为暂停渲染线程）。
+     */
     private void hideGameUI() {
         if (gameSurfaceView != null && isGameStarted) {
             gameSurfaceView.pauseGame();
@@ -310,6 +330,9 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         }
     }
 
+    /**
+     * 恢复游戏交互层（当前策略为恢复渲染线程）。
+     */
     private void showGameUI() {
         if (gameSurfaceView != null && isGameStarted && isGamePaused) {
             gameSurfaceView.resumeGame();
@@ -320,6 +343,9 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     // --- 生命周期 ---
 
     @Override
+    /**
+     * 生命周期暂停：暂停游戏循环并暂停背景音乐。
+     */
     protected void onPause() {
         super.onPause();
         if (gameSurfaceView != null && isGameStarted && !isGamePaused) {
@@ -330,6 +356,9 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     }
 
     @Override
+    /**
+     * 生命周期恢复：恢复游戏循环并恢复背景音乐。
+     */
     protected void onResume() {
         super.onResume();
         if (gameSurfaceView != null && isGameStarted && isGamePaused) {
@@ -340,6 +369,9 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
     }
 
     @Override
+    /**
+     * 生命周期销毁：释放线程、图像和音频等资源。
+     */
     protected void onDestroy() {
         super.onDestroy();
         exitHandler.removeCallbacks(resetExitFlagRunnable);

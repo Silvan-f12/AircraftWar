@@ -23,6 +23,9 @@ public class GameOverActivity extends AppCompatActivity {
     private int finalScore;
 
     @Override
+    /**
+     * 入口：读取结算参数、展示分数与排名提示，并绑定按钮事件。
+     */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_over); // 我们稍后创建这个布局
@@ -67,6 +70,9 @@ public class GameOverActivity extends AppCompatActivity {
         setupClickListeners();
     }
 
+    /**
+     * 按排名设置结算文案。
+     */
     private void displayRankMessage(int rank) {
         if(rank == 1) {
             tvRankInfo.setText("Fantanstic!你就是全网飞机大战的顶流！");
@@ -78,6 +84,9 @@ public class GameOverActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * 绑定“再来一局/返回菜单”两个按钮的点击行为。
+     */
     private void setupClickListeners() {
         // 再来一局
         btnRestart.setOnClickListener(v -> {
@@ -100,6 +109,9 @@ public class GameOverActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * 将中文难度名映射为存档使用的英文 tag。
+     */
     private String getDifficultyTag(String level) {
         switch (level) {
             case "简单模式": return "simple";

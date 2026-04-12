@@ -8,8 +8,9 @@
 
     <!-- 1. 顶部占位符 (专门用来避开状态栏) -->
     <View
+        android:id="@+id/topInsetSpacer"
         android:layout_width="match_parent"
-        android:layout_height="60dp" />
+        android:layout_height="0dp" />
 
     <!-- 2. 难度切换按钮 (放在顶部) -->
     <com.google.android.material.tabs.TabLayout

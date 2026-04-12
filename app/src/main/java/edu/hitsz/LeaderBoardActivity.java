@@ -19,12 +19,12 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
-// 注意：这里不要导入 android.view.ActionMode
-// 注意：这里不要导入 android.support.v7.app.AppCompatActivity
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity; // 只保留这个
-import androidx.appcompat.view.ActionMode; // 只保留这个，用于 Callback
+import androidx.appcompat.app.AppCompatActivity; 
+import androidx.appcompat.view.ActionMode; 
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -42,6 +42,7 @@ public class LeaderBoardActivity extends AppCompatActivity {
     private TabLayout bottomNavigation;
     private TabLayout tabLayoutDifficulty; // 改为 TabLayout
     private RecyclerView rvRankingList;
+    private View topInsetSpacer;
 
     // 当前活动的 ActionMode (用于多选删除)
     private ActionMode currentActionMode;
@@ -51,16 +52,32 @@ public class LeaderBoardActivity extends AppCompatActivity {
     private Runnable navigationRunnable;
 
     @Override
+    /**
+     * 入口：初始化排行榜控件、难度切换、底部导航和滑动手势。
+     */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_leaderboard);
 
         rvRankingList = findViewById(R.id.rvRankingList);
+        topInsetSpacer = findViewById(R.id.topInsetSpacer);
         // 1. 确保文件顶部有这行 import (如果没有，打出来让AS自动导)
 
         // 2.模式切换
         tabLayoutDifficulty = findViewById(R.id.tabLayoutDifficulty); // 现在 TabLayout 可以正确接收 TabLayout 了
         bottomNavigation = findViewById(R.id.bottomNavigation);
+
+        if (topInsetSpacer != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(topInsetSpacer, (v, insets) -> {
+                int topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+                ViewGroup.LayoutParams lp = v.getLayoutParams();
+                if (lp != null && lp.height != topInset) {
+                    lp.height = topInset;
+                    v.setLayoutParams(lp);
+                }
+                return insets;
+            });
+        }
         //添加一键清空
         Button btnReset = findViewById(R.id.btnReset); // 推荐：在 XML 中定义
         if (btnReset != null) {
@@ -150,6 +167,9 @@ public class LeaderBoardActivity extends AppCompatActivity {
     }
 
     @Override
+    /**
+     * 回到前台时按当前选中的难度重新拉取榜单数据。
+     */
     protected void onResume() {
         super.onResume();
         // 获取当前选中的Tab
@@ -158,6 +178,9 @@ public class LeaderBoardActivity extends AppCompatActivity {
         // 重新加载数据
         loadAndDisplayRankings(currentTag);
     }
+    /**
+     * 读取指定难度的分数记录并刷新 RecyclerView。
+     */
     private void loadAndDisplayRankings(String difficultyTag) {
         ScoreRecords records = new ScoreRecords(this, difficultyTag);
         List<PlayerScore> sortedList = records.getSortedScores();
@@ -388,6 +411,9 @@ public class LeaderBoardActivity extends AppCompatActivity {
             }
         }
 
+        /**
+         * 根据难度 tag 生成列表头标题文本。
+         */
         private String getTitleFromTag(String tag) {
             if ("simple".equals(tag)) return "【 简单模式 】";
             else if ("medium".equals(tag)) return "【 中等模式 】";
@@ -395,6 +421,9 @@ public class LeaderBoardActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Tab 下标转难度 tag，用于文件读写与数据筛选。
+     */
     private String getTagFromPosition(int position) {
         switch (position) {
             case 0: return "simple";

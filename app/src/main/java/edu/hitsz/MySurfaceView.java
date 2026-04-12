@@ -73,7 +73,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         // 初始化 Paint
         endPaint = new Paint();
         endPaint.setColor(Color.WHITE);
-        endPaint.setTextSize(60);
+        endPaint.setTextSize(48);
         endPaint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         endPaint.setAntiAlias(true);
         endPaint.setTextAlign(Paint.Align.CENTER);
@@ -258,7 +258,8 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         float top = (WINDOW_HEIGHT - cardHeight) / 2f;
         float right = left + cardWidth;
         float bottom = top + cardHeight;
-        float radius = 40f; // 圆角半径
+        float minEdge = Math.min(WINDOW_WIDTH, WINDOW_HEIGHT);
+        float radius = minEdge * 0.035f; // 圆角半径按屏幕比例缩放
 
         // 绘制圆角矩形 (这就是“玻璃”本体)
         canvas.drawRoundRect(left, top, right, bottom, radius, radius, glassPaint);
@@ -267,17 +268,17 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         borderPaint.setColor(Color.argb(100, 255, 255, 255)); // 更淡的白边
         borderPaint.setStyle(Paint.Style.STROKE);
-        borderPaint.setStrokeWidth(2f);
+        borderPaint.setStrokeWidth(minEdge * 0.002f);
         canvas.drawRoundRect(left, top, right, bottom, radius, radius, borderPaint);
 
         // --- 3. 绘制文字 (现在文字是在“玻璃”上面) ---
 
         // 游戏结束文字
-        endPaint.setTextSize(60);
+        endPaint.setTextSize(Math.max(44f, minEdge * 0.065f));
         endPaint.setTextAlign(Paint.Align.CENTER);
         endPaint.setColor(Color.WHITE); // 确保文字是白色的，在玻璃上更清晰
         // 可以加一点阴影，让文字更立体
-        endPaint.setShadowLayer(4f, 0f, 2f, Color.BLACK);
+        endPaint.setShadowLayer(minEdge * 0.006f, 0f, minEdge * 0.003f, Color.BLACK);
 
         Paint.FontMetrics fm = endPaint.getFontMetrics();
         float lineHeight = fm.bottom - fm.top;
@@ -289,18 +290,18 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         // 第一行 "GAME OVER" (稍微偏上一点)
         String text = "GAME OVER";
         // 基线位置 = 卡片中心 - (文字总高度 / 2) + 一些微调
-        float textY = cardCenterY - (lineHeight / 2f) - 20f;
+        float textY = cardCenterY - (lineHeight / 2f) - minEdge * 0.02f;
         canvas.drawText(text, WINDOW_WIDTH / 2f, textY, endPaint);
 
         // 显示分数
         if (game != null) {
-            endPaint.setTextSize(40);
+            endPaint.setTextSize(Math.max(30f, minEdge * 0.045f));
             // 重置阴影或调整阴影以适应小字
-            endPaint.setShadowLayer(2f, 0f, 1f, Color.BLACK);
+            endPaint.setShadowLayer(minEdge * 0.003f, 0f, minEdge * 0.0015f, Color.BLACK);
 
             String scoreText = "Final Score: " + game.getScore();
             // 分数在标题下方
-            float scoreY = textY + lineHeight + 30f;
+            float scoreY = textY + lineHeight + minEdge * 0.02f;
             canvas.drawText(scoreText, WINDOW_WIDTH / 2f, scoreY, endPaint);
         }
 
