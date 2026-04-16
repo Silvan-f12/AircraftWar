@@ -312,9 +312,7 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
                 // 退出PiP模式，将SurfaceView的尺寸恢复为全屏
                 params.width = ViewGroup.LayoutParams.MATCH_PARENT;
                 params.height = ViewGroup.LayoutParams.MATCH_PARENT;
-                // 如果你的游戏有固定的全屏分辨率，也可以在这里设置具体的像素值
-                params.width = 1080;
-                params.height = 1920;
+
             }
             gameSurfaceView.setLayoutParams(params);
         }

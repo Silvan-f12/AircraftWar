@@ -30,7 +30,7 @@
         android:exported="false"
         android:theme="@style/Theme.AircraftWar" />
 
-    <!-- 1. SelectActivity: 启动入口 (难度选择界面) -->
+    <!-- SelectActivity: 启动入口 (难度选择界面) -->
     <activity
         android:name=".SelectActivity"
         android:exported="true"
@@ -41,7 +41,7 @@
         </intent-filter>
     </activity>
 
-    <!-- 2. MainActivity: 游戏运行界面 -->
+    <!-- MainActivity: 游戏运行界面 -->
     <activity
         android:name=".MainActivity"
         android:exported="false"
@@ -51,7 +51,7 @@
         android:resizeableActivity="true"
         android:supportsPictureInPicture="true" />
 
-    <!-- 3. 游戏结束界面 -->
+    <!-- 游戏结束界面 -->
     <activity android:name=".GameOverActivity" />
 
     </application>

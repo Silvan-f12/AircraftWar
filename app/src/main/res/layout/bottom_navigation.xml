@@ -8,8 +8,8 @@
     android:contentDescription="@string/bottom_navigation_desc"
     app:tabMode="fixed"
     app:tabGravity="center"
-    app:tabIndicatorColor="#FF5722"
-    app:tabSelectedTextColor="#FF5722"
+    app:tabIndicatorColor="@color/text_difficulty_selector"
+    app:tabSelectedTextColor="@color/text_difficulty_selector"
     app:tabTextColor="#666666"
     app:tabPaddingStart="60dp"
     app:tabPaddingEnd="60dp" />
