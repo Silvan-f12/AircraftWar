@@ -56,6 +56,12 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     // 标记游戏是否已结束（用于防止重复回调）
     private boolean isGameOver = false;
 
+    // 记录 Game Over 画面首次显示时间，用于停留一段时间后再跳转
+    private long gameOverShownAt = -1L;
+
+    // 确保 Game Over 回调只触发一次
+    private boolean gameOverCallbackSent = false;
+
     private Bitmap bgBitmap;
 
     /**
@@ -129,6 +135,8 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         }
         isRunning = true;
         isGameOver = false;
+        gameOverShownAt = -1L;
+        gameOverCallbackSent = false;
         renderThread = new Thread(this);
         renderThread.start();
     }
@@ -159,7 +167,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void run() {
         // 移动 sleepTime 的声明到循环内部
-        long frameTime = 16;
+        //long frameTime = 16;
         long startTime;
         long sleepTime;
 
@@ -172,11 +180,23 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                 canvas = holder.lockCanvas();
                 if (canvas != null) {
                     // 清空画布
-                    canvas.drawColor(Color.BLACK);
+                    // canvas.drawColor(Color.BLACK);
 
                     if (game != null) {
                         if (isDisplayingGameOver) {
                             drawGameOver(canvas);
+
+                            if (gameOverShownAt > 0 && !gameOverCallbackSent
+                                    && System.currentTimeMillis() - gameOverShownAt >= 500L) {
+                                gameOverCallbackSent = true;
+                                final int finalScore = game.getScore();
+                                MySurfaceView.this.post(() -> {
+                                    if (gameOverListener != null) {
+                                        gameOverListener.onGameOver(finalScore);
+                                    }
+                                });
+                                break;
+                            }
                         } else {
                             // 正常游戏流程
                             game.updateLogic();
@@ -185,21 +205,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                             // 检查游戏是否结束
                             if (game.isGameOver() && !isDisplayingGameOver) {
                                 isDisplayingGameOver = true;
-
-                                // 获取最终分数
-                                final int finalScore = game.getScore();
-
-                                // 回调给主线程
-                                MySurfaceView.this.post(() -> {
-                                    if (gameOverListener != null) {
-                                        gameOverListener.onGameOver(finalScore);
-                                    }
-                                    // 关键：不要在这里调用 stopGameLoop()！
-                                    // 让主线程去调用 stopGameLoop()，这里只负责退出循环
-                                });
-
-                                // 直接跳出循环，防止继续绘制
-                                break;
+                                gameOverShownAt = System.currentTimeMillis();
                             }
                         }
                     }
@@ -218,18 +224,18 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                 }
             }
 
-            // 控制帧率（关键：加了 try-catch 并且移除了外部的 sleepTime 计算）
-            sleepTime = frameTime - (System.currentTimeMillis() - startTime);
-            if (sleepTime > 0) {
-                try {
-                    Thread.sleep(sleepTime);
-                } catch (InterruptedException e) {
-                    // 一旦被中断，立即退出
-                    break;
-                } catch (Exception e) {
-                    break;
-                }
-            }
+//            // 控制帧率（关键：加了 try-catch 并且移除了外部的 sleepTime 计算）
+//            sleepTime = frameTime - (System.currentTimeMillis() - startTime);
+//            if (sleepTime > 0) {
+//                try {
+//                    Thread.sleep(sleepTime);
+//                } catch (InterruptedException e) {
+//                    // 一旦被中断，立即退出
+//                    break;
+//                } catch (Exception e) {
+//                    break;
+//                }
+//            }
         }
         // 循环结束，线程自然死亡
     }
@@ -241,13 +247,13 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         // --- 1. 绘制深色遮罩 (让背景游戏画面变暗，突出前景) ---
         Paint bgPaint = new Paint();
         // 提高透明度到 230 (范围 0-255)，让背景更暗，更有聚焦感
-        bgPaint.setColor(Color.argb(20, 0, 0, 0));
+        bgPaint.setColor(Color.argb(255, 0, 0, 0));
         canvas.drawRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, bgPaint);
 
         // --- 2. 配置“磨砂玻璃”卡片样式 ---
         Paint glassPaint = new Paint(Paint.ANTI_ALIAS_FLAG); // 开启抗锯齿
         // 颜色：半透明白色 (Alpha=60, 约 25% 不透明度)
-        // 这种半透明白色叠加在深色背景上，就是经典的磨砂玻璃效果
+
         glassPaint.setColor(Color.argb(60, 255, 255, 255));
         glassPaint.setStyle(Paint.Style.FILL);
 
@@ -271,7 +277,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         borderPaint.setStrokeWidth(minEdge * 0.002f);
         canvas.drawRoundRect(left, top, right, bottom, radius, radius, borderPaint);
 
-        // --- 3. 绘制文字 (现在文字是在“玻璃”上面) ---
+        // --- 3. 绘制文字 ---
 
         // 游戏结束文字
         endPaint.setTextSize(Math.max(44f, minEdge * 0.065f));
