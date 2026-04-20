@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         Log.d("MainActivity", "Exit flag reset (timeout).");
     };
     private static final long EXIT_TIME_DELAY = 2000;
+    private static final int REQUEST_CODE_GAME_OVER = 100; // 用于 GameOverActivity 返回结果
     AudioManager audioManager = AudioManager.getInstance();
 
     /**
@@ -98,15 +99,15 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
 
             // 音频设置 (关键：这里如果没传值，必须给默认值，否则 getBooleanExtra 可能报错)
             isAudioEnabled = intent.getBooleanExtra("AUDIO_ENABLED", true); // 第二个参数是默认值
-            audioBgmVolume = intent.getFloatExtra("BGM_VOLUME", 0.5f);
-            audioSfxVolume = intent.getFloatExtra("SFX_VOLUME", 0.5f);
+            audioBgmVolume = intent.getFloatExtra("BGM_VOLUME", 0.8f);
+            audioSfxVolume = intent.getFloatExtra("SFX_VOLUME", 0.8f);
             userName = intent.getStringExtra("USERNAME"); // 假设你修改了方法签名或做了判空
         } else {
             // 如果 Intent 为空，全部使用默认值
             currentLevel = "简单模式";
             isAudioEnabled = true;
-            audioBgmVolume = 0.5f;
-            audioSfxVolume = 0.5f;
+            audioBgmVolume = 0.8f;
+            audioSfxVolume = 0.8f;
             userName = "游客";
             Log.e("MainActivity", "Intent is null! Using default settings.");
         }
@@ -176,6 +177,8 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
 
         if (gameSurfaceView != null) {
             gameSurfaceView.setGame(game);
+            // 启动渲染线程
+            gameSurfaceView.resumeGame();
         }
 
         isGameStarted = true;
@@ -202,9 +205,27 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
             intent.putExtra("FINAL_SCORE", score);
             intent.putExtra("GAME_LEVEL", currentLevel); // 顺手把难度也传过去，方便显示
             intent.putExtra("USERNAME", userName);
-            startActivity(intent);
+            startActivityForResult(intent, REQUEST_CODE_GAME_OVER);
             // 注意：这里不 finish()，因为返回键应该回到 MainActivity 的 onPause 状态
         });
+    }
+
+    @Override
+    /**
+     * 处理 GameOverActivity 的返回结果（再来一局）
+     */
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (requestCode == REQUEST_CODE_GAME_OVER && resultCode == RESULT_OK && data != null) {
+            String action = data.getStringExtra("ACTION");
+            if ("RESTART".equals(action)) {
+                String targetLevel = data.getStringExtra("TARGET_LEVEL");
+                currentLevel = targetLevel != null ? targetLevel : "简单模式";
+                // 重新开始游戏
+                startGame(currentLevel);
+            }
+        }
     }
 
 

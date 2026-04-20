@@ -42,7 +42,7 @@ public class LeaderBoardActivity extends AppCompatActivity {
     private TabLayout bottomNavigation;
     private TabLayout tabLayoutDifficulty; // 改为 TabLayout
     private RecyclerView rvRankingList;
-    private View topInsetSpacer;
+    private View topInsetSpacer;    // 顶部状态栏
 
     // 当前活动的 ActionMode (用于多选删除)
     private ActionMode currentActionMode;

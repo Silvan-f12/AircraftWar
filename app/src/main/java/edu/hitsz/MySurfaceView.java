@@ -177,28 +177,26 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
             Canvas canvas = null;
 
             try {
-                canvas = holder.lockCanvas();
-                if (canvas != null) {
-                    // 清空画布
-                    // canvas.drawColor(Color.BLACK);
-
-                    if (game != null) {
-                        if (isDisplayingGameOver) {
-                            drawGameOver(canvas);
-
-                            if (gameOverShownAt > 0 && !gameOverCallbackSent
-                                    && System.currentTimeMillis() - gameOverShownAt >= 500L) {
-                                gameOverCallbackSent = true;
-                                final int finalScore = game.getScore();
-                                MySurfaceView.this.post(() -> {
-                                    if (gameOverListener != null) {
-                                        gameOverListener.onGameOver(finalScore);
-                                    }
-                                });
-                                break;
+                if (isDisplayingGameOver) {
+                    // 游戏已结束，不再绘制，只等待回调时间
+                    if (gameOverShownAt > 0 && !gameOverCallbackSent
+                            && System.currentTimeMillis() - gameOverShownAt >= 500L) {
+                        gameOverCallbackSent = true;
+                        final int finalScore = game.getScore();
+                        MySurfaceView.this.post(() -> {
+                            if (gameOverListener != null) {
+                                gameOverListener.onGameOver(finalScore);
                             }
-                        } else {
-                            // 正常游戏流程
+                        });
+                        break;
+                    }
+                    // 每 16ms 检查一次时间，避免 CPU 占用过高
+                    Thread.sleep(16);
+                } else {
+                    // 正常游戏流程：绘制画面
+                    canvas = holder.lockCanvas();
+                    if (canvas != null) {
+                        if (game != null) {
                             game.updateLogic();
                             game.draw(canvas);
 
@@ -209,112 +207,25 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                             }
                         }
                     }
+                    if (canvas != null) {
+                        try {
+                            holder.unlockCanvasAndPost(canvas);
+                        } catch (Exception e) {
+                            // 忽略释放时的异常
+                        }
+                    }
                 }
             } catch (Exception e) {
                 // 捕获所有异常，防止线程意外崩溃
                 Log.e(TAG, "渲染线程异常: " + e.getMessage());
                 break;
-            } finally {
-                if (canvas != null) {
-                    try {
-                        holder.unlockCanvasAndPost(canvas);
-                    } catch (Exception e) {
-                        // 忽略释放时的异常
-                    }
-                }
             }
-
-//            // 控制帧率（关键：加了 try-catch 并且移除了外部的 sleepTime 计算）
-//            sleepTime = frameTime - (System.currentTimeMillis() - startTime);
-//            if (sleepTime > 0) {
-//                try {
-//                    Thread.sleep(sleepTime);
-//                } catch (InterruptedException e) {
-//                    // 一旦被中断，立即退出
-//                    break;
-//                } catch (Exception e) {
-//                    break;
-//                }
-//            }
         }
-        // 循环结束，线程自然死亡
+        // 循环结束，重置运行标志，确保下次可以启动新线程
+        isRunning = false;
     }
 
-    /**
-     * 绘制游戏结束界面 (模拟磨砂玻璃效果)
-     */
-    private void drawGameOver(Canvas canvas) {
-        // --- 1. 绘制深色遮罩 (让背景游戏画面变暗，突出前景) ---
-        Paint bgPaint = new Paint();
-        // 提高透明度到 230 (范围 0-255)，让背景更暗，更有聚焦感
-        bgPaint.setColor(Color.argb(255, 0, 0, 0));
-        canvas.drawRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, bgPaint);
 
-        // --- 2. 配置“磨砂玻璃”卡片样式 ---
-        Paint glassPaint = new Paint(Paint.ANTI_ALIAS_FLAG); // 开启抗锯齿
-        // 颜色：半透明白色 (Alpha=60, 约 25% 不透明度)
-
-        glassPaint.setColor(Color.argb(60, 255, 255, 255));
-        glassPaint.setStyle(Paint.Style.FILL);
-
-        // 定义卡片的大小和位置
-        float cardWidth = WINDOW_WIDTH * 0.8f; // 卡片宽度占屏幕 80%
-        float cardHeight = WINDOW_HEIGHT * 0.4f; // 卡片高度占屏幕 40%
-        float left = (WINDOW_WIDTH - cardWidth) / 2f;
-        float top = (WINDOW_HEIGHT - cardHeight) / 2f;
-        float right = left + cardWidth;
-        float bottom = top + cardHeight;
-        float minEdge = Math.min(WINDOW_WIDTH, WINDOW_HEIGHT);
-        float radius = minEdge * 0.035f; // 圆角半径按屏幕比例缩放
-
-        // 绘制圆角矩形 (这就是“玻璃”本体)
-        canvas.drawRoundRect(left, top, right, bottom, radius, radius, glassPaint);
-
-        // (可选) 给玻璃卡片加一个细微的白色边框，增加质感
-        Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        borderPaint.setColor(Color.argb(100, 255, 255, 255)); // 更淡的白边
-        borderPaint.setStyle(Paint.Style.STROKE);
-        borderPaint.setStrokeWidth(minEdge * 0.002f);
-        canvas.drawRoundRect(left, top, right, bottom, radius, radius, borderPaint);
-
-        // --- 3. 绘制文字 ---
-
-        // 游戏结束文字
-        endPaint.setTextSize(Math.max(44f, minEdge * 0.065f));
-        endPaint.setTextAlign(Paint.Align.CENTER);
-        endPaint.setColor(Color.WHITE); // 确保文字是白色的，在玻璃上更清晰
-        // 可以加一点阴影，让文字更立体
-        endPaint.setShadowLayer(minEdge * 0.006f, 0f, minEdge * 0.003f, Color.BLACK);
-
-        Paint.FontMetrics fm = endPaint.getFontMetrics();
-        float lineHeight = fm.bottom - fm.top;
-
-        // 计算文字在卡片内的垂直中心位置
-        // 卡片中心 Y = top + cardHeight / 2
-        float cardCenterY = top + cardHeight / 2f;
-
-        // 第一行 "GAME OVER" (稍微偏上一点)
-        String text = "GAME OVER";
-        // 基线位置 = 卡片中心 - (文字总高度 / 2) + 一些微调
-        float textY = cardCenterY - (lineHeight / 2f) - minEdge * 0.02f;
-        canvas.drawText(text, WINDOW_WIDTH / 2f, textY, endPaint);
-
-        // 显示分数
-        if (game != null) {
-            endPaint.setTextSize(Math.max(30f, minEdge * 0.045f));
-            // 重置阴影或调整阴影以适应小字
-            endPaint.setShadowLayer(minEdge * 0.003f, 0f, minEdge * 0.0015f, Color.BLACK);
-
-            String scoreText = "Final Score: " + game.getScore();
-            // 分数在标题下方
-            float scoreY = textY + lineHeight + minEdge * 0.02f;
-            canvas.drawText(scoreText, WINDOW_WIDTH / 2f, scoreY, endPaint);
-        }
-
-        // 恢复 Paint 设置 (防止影响下一帧的游戏绘制)
-        endPaint.clearShadowLayer();
-        endPaint.setColor(Color.BLACK); // 假设你默认文字是黑色，改回来
-    }
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -340,6 +251,8 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     public void resetGameOverState() {
         isDisplayingGameOver = false;
         isGameOver = false;
+        gameOverShownAt = -1L;
+        gameOverCallbackSent = false;
     }
 
     /**
