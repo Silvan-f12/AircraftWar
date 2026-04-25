@@ -194,6 +194,8 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
 
         if (gameSurfaceView != null) {
             gameSurfaceView.setGame(game);
+            // 【关键修复】重新启动游戏循环，确保"再来一局"时渲染线程正确重启
+            gameSurfaceView.restartGameLoop();
         }
 
         isGameStarted = true;
@@ -235,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
             return;
         }
 
+        // 断开旧连接（如果存在）
         if (socketGameClient != null) {
             socketGameClient.close();
         }
@@ -351,17 +354,15 @@ public class MainActivity extends AppCompatActivity implements MySurfaceView.OnG
         isGameStarted = false;
         isGamePaused = true;
 
-        // 2. 使用 Handler 跳转
-        
+        // 使用 Handler 跳转到游戏结算界面
         new Handler(Looper.getMainLooper()).post(() -> {
             Intent intent = new Intent(MainActivity.this, GameOverActivity.class);
             intent.putExtra("FINAL_SCORE", score);
-            intent.putExtra("GAME_LEVEL", currentLevel); // 顺手把难度也传过去，方便显示
+            intent.putExtra("GAME_LEVEL", currentLevel);
             intent.putExtra("USERNAME", userName);
             intent.putExtra("ONLINE_MODE", isOnlineMode);
             intent.putExtra("OPPONENT_SCORE", game != null ? game.getOpponentScore() : finalOpponentScore);
             startActivity(intent);
-            // 注意：这里不 finish()，因为返回键应该回到 MainActivity 的 onPause 状态
         });
     }
 

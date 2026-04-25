@@ -334,12 +334,26 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     }
 
     /**
+     * 用于"再来一局"场景：重置游戏结束状态并重新启动游戏循环
+     * 在 MainActivity.onActivityResult 中调用此方法
+     */
+    public void restartGameLoop() {
+        resetGameOverState();
+        // 如果线程已停止，重新启动游戏循环
+        if (!isRunning && holder.getSurface().isValid()) {
+            startGameLoop();
+            Log.d(TAG, "游戏循环已重新启动");
+        }
+    }
+
+    /**
      * 重置游戏结束状态，准备开始新游戏
      * 必须在启动新游戏逻辑前调用
      */
     public void resetGameOverState() {
         isDisplayingGameOver = false;
         isGameOver = false;
+        gameOverCallbackSent = false;
     }
 
     /**

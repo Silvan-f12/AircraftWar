@@ -82,18 +82,9 @@
     android:layout_marginTop="60dp">
 
     <Button
-        android:id="@+id/btn_restart"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="再来一局"
-        android:layout_marginEnd="20dp" />
-
-    <Button
         android:id="@+id/btn_main_menu"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:text="主菜单" />
     </LinearLayout>
 </LinearLayout>

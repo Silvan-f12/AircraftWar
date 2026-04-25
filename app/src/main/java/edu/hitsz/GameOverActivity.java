@@ -18,7 +18,7 @@ public class GameOverActivity extends AppCompatActivity {
     private AudioManager audioManager = AudioManager.getInstance();
     private TextView tvScore, tvLevel, tvRankInfo;
     private TextView tvOpponentScore;
-    private Button btnRestart, btnMenu;
+    private Button btnMenu;
     private String userName;
     private String currentLevel;
     private int finalScore;
@@ -41,7 +41,6 @@ public class GameOverActivity extends AppCompatActivity {
         tvLevel = findViewById(R.id.tv_game_level);
         tvRankInfo = findViewById(R.id.tv_rank_info);
         tvOpponentScore = findViewById(R.id.tv_opponent_score);
-        btnRestart = findViewById(R.id.btn_restart);
         btnMenu = findViewById(R.id.btn_main_menu);
 
         // 3. 获取传递的数据
@@ -97,19 +96,9 @@ public class GameOverActivity extends AppCompatActivity {
     }
 
     /**
-     * 绑定“再来一局/返回菜单”两个按钮的点击行为。
+     * 绑定"返回菜单"按钮的点击行为。
      */
     private void setupClickListeners() {
-        // 再来一局
-        btnRestart.setOnClickListener(v -> {
-
-            // 创建 Intent 回传给 MainActivity
-            Intent resultIntent = new Intent();
-            resultIntent.putExtra("ACTION", "RESTART");
-            resultIntent.putExtra("TARGET_LEVEL", currentLevel);
-            setResult(RESULT_OK, resultIntent);
-            finish(); // 关闭当前 Activity，回到 MainActivity
-        });
 
         // 返回菜单
         btnMenu.setOnClickListener(v -> {
