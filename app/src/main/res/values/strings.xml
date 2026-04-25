@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AircraftWar</string>
+    <string name="leaderboard">排行榜</string>
+    <string name="bottom_navigation_desc">底部导航栏，包含首页和排行榜</string>
+</resources>
