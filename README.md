@@ -1,25 +1,38 @@
-# Socket 联机对战实验（Android + Java Module）
+# Web 项目教程（Android 客户端 + Java Socket 服务端）
 
-本工程包含两部分：
+本仓库是一个教程向多模块工程，包含：
 
-- `MyServer`：Java Module，作为 Socket 对战服务器
-- `app`：Android 客户端，连接服务器并实时同步分数
+- `app`：Android 联机演示客户端
+- `MyServer`：Java Socket 服务端模块
+- `AircraftWar-main`：飞机大战联机版客户端工程
 
-## 功能点对应
+## 1. 教程路径约定
 
-- 两名玩家建立连接：服务器将前两名在线玩家自动配对
-- 实时同步分数：任一方发送分数变化后，服务器广播最新对局状态
-- 双方死亡同步结算：两人都发送 `DEAD` 后，服务器同时下发结算消息
+为避免绑定个人电脑路径，本文统一使用占位路径：
 
-## 协议（文本行协议）
+- `<WEB_ROOT>`：当前仓库根目录（即包含 `settings.gradle.kts` 的目录）
 
-客户端 -> 服务器：
+示例：
+
+- macOS: `/Users/yourname/AndroidStudioProjects/Web`
+- Windows: `D:\AndroidStudioProjects\Web`
+
+## 2. 功能目标
+
+- 两名玩家建立连接并自动匹配
+- 对局过程中分数实时同步
+- 双方死亡后同时收到最终结算
+
+## 3. 协议说明（文本行）
+
+客户端 -> 服务端：
 
 - `HELLO|<name>`：加入匹配
 - `SCORE|<score>`：上报当前分数
 - `DEAD|<score>`：上报死亡及最终分数
+- `QUIT`：主动断开
 
-服务器 -> 客户端：
+服务端 -> 客户端：
 
 - `WAITING`
 - `MATCHED|<playerIndex>`（1 或 2）
@@ -27,31 +40,85 @@
 - `SETTLE|<score1>|<score2>`
 - `OPPONENT_LEFT|<playerIndex>`
 
-## 快速运行
+## 4. 环境准备
 
-1) 启动服务器（默认端口 7777）
+- Android Studio（建议稳定版）
+- JDK 17
+- Android 模拟器或真机
+
+## 5. 启动服务端（区分 macOS / Windows）
+
+默认端口 `7777`。
+
+### macOS
 
 ```bash
-cd /Users/duchongyang/AndroidStudioProjects/Web
-./gradlew :MyServer:run
+cd <WEB_ROOT>
+./gradlew :MyServer:run --args='7777'
 ```
 
-2) 运行 Android 客户端
+### Windows (PowerShell)
 
-- 在 Android Studio 运行 `app` 模块
-- 在真机/模拟器中输入服务器地址与端口：
-  - 模拟器访问宿主机可用 `10.0.2.2`
-  - 端口默认 `7777`
+```powershell
+cd <WEB_ROOT>
+.\gradlew.bat :MyServer:run --args="7777"
+```
 
-3) 启动两个客户端实例进行对战验证
+启动成功后，终端会持续运行；不要关闭该终端。
 
-- 玩家 A/B 连接后自动匹配
-- 点击 `+10 分并同步`，另一端可看到分数实时变化
-- 双方分别点击 `我已死亡，提交结算`，两端会同时显示最终结算
+## 6. 启动客户端（区分使用场景）
 
-## 权限与明文配置
+你可以运行 `app` 或 `AircraftWar-main`。
 
-已在 `app/src/main/AndroidManifest.xml` 中配置：
+### 6.1 运行 `app` 模块（Android Studio）
+
+1. 打开 `<WEB_ROOT>`
+2. 运行 `app` 模块到设备
+3. 填写地址端口：
+   - 模拟器连本机：`10.0.2.2:7777`
+   - 真机连本机：`<电脑局域网IP>:7777`
+
+### 6.2 运行 `AircraftWar-main` 模块（Android Studio）
+
+1. 打开 `<WEB_ROOT>/AircraftWar-main`
+2. 运行 `app` 模块
+3. 在选择页勾选联机模式并填写服务器地址端口
+
+## 7. 构建命令（区分 macOS / Windows）
+
+### macOS
+
+```bash
+cd <WEB_ROOT>
+./gradlew :MyServer:build
+./gradlew :app:assembleDebug
+```
+
+### Windows (PowerShell)
+
+```powershell
+cd <WEB_ROOT>
+.\gradlew.bat :MyServer:build
+.\gradlew.bat :app:assembleDebug
+```
+
+## 8. 联机验收步骤
+
+1. 服务端已运行
+2. 两台客户端连接到同一地址和端口
+3. 双方匹配成功
+4. 任一方得分变化，对方实时看到更新
+5. 双方死亡后同时显示结算
+
+## 9. 常见问题
+
+- 一直 `WAITING`：确认第二个客户端已连接同一服务端
+- 连接失败：检查端口、防火墙、IP 是否正确
+- 模拟器连不上本机：确认地址使用 `10.0.2.2`
+
+## 10. 已配置权限
+
+`app/src/main/AndroidManifest.xml` 已包含：
 
 - `android.permission.INTERNET`
 - `android:usesCleartextTraffic="true"`
