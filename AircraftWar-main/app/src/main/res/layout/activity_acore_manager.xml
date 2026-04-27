@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#111111">
+
+    <!-- 标题栏 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="分数管理"
+        android:textColor="#FF5555"
+        android:textSize="24sp"
+        android:gravity="center"
+        android:padding="16dp" />
+
+    <!-- 操作栏 (显示在顶部，选择模式下显示) -->
+    <LinearLayout
+        android:id="@+id/ll_batch_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp"
+        android:background="#333333"
+        android:visibility="gone"> <!-- 默认隐藏 -->
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="已选择 0 项"
+            android:id="@+id/tv_selected_count"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btn_delete_selected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="删除选中" />
+    </LinearLayout>
+
+    <!-- 列表 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_score_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>
